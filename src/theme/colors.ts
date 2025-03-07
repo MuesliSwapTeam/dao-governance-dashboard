@@ -1,0 +1,137 @@
+const colors = {
+  background: {
+    dark: "#151F32",
+    light: "#EEF3FD",
+  },
+  backgroundSecondary: {
+    dark: "#252E40",
+    light: "#ffffff",
+  },
+  primary: {
+    dark: "#0c1629",
+    light: "#ffffff",
+  },
+  primaryAlpha: {
+    dark: "#2c3346",
+    light: "#f3f5fe",
+  },
+  primaryTranslucent: {
+    dark: "#0c1629a3",
+    light: "#ffffffa3",
+  },
+  accent: {
+    dark: "#5346ff",
+    light: "#5346ff",
+  },
+  accentPressed: {
+    dark: "#6b5fff",
+    light: "#6b5fff",
+  },
+  text: {
+    dark: "#fff",
+    light: "#0c1629",
+  },
+  textSubtle: {
+    dark: "#CFD6E4",
+    light: "#3c4555",
+  },
+  secondary: {
+    dark: "#252E40",
+    light: "#e5e9f1",
+  },
+  linkColor: {
+    dark: "#5e52ff",
+    light: "#5346ff",
+  },
+  listItemBackground: {
+    dark: "#252E40",
+    light: "#eff2f8",
+  },
+  blues: {
+    50: { dark: "#797980", light: "#f2f1ff" },
+    100: { dark: "#6f6f80", light: "#dfddff" },
+    200: { dark: "#636180", light: "#c8c3ff" },
+    300: { dark: "#9189FF", light: "#9189FF" },
+    400: { dark: "#6b5fff", light: "#6b5fff" },
+    700: { dark: "#2112DA", light: "#2112DA" },
+  },
+  greens: {
+    50: { dark: "#e9faed", light: "#e9faed" },
+    100: { dark: "#C6F1D0", light: "#C6F1D0" },
+    200: { dark: "#9FE7B1", light: "#9FE7B1" },
+    300: { dark: "#6CDB87", light: "#6CDB87" },
+    400: { dark: "#44D166", light: "#44D166" },
+    500: { dark: "#0FC43B", light: "#0FC43B" },
+  },
+  reds: {
+    default: { dark: "#ff5a5a", light: "#ff5a5a" },
+    50: { dark: "#ffeded", light: "#ffeded" },
+  },
+  grays: {
+    50: { dark: "#f8fafd", light: "#f8fafd" },
+    100: { dark: "#eff2f8", light: "#eff2f8" },
+    200: { dark: "#e5e9f1", light: "#e5e9f1" },
+    300: { dark: "#cfd6e4", light: "#cfd6e4" },
+    500: { dark: "#7c8597", light: "#7c8597" },
+    600: { dark: "#5d6573", light: "#5d6573" },
+    700: { dark: "#3c4555", light: "#3c4555" },
+    800: { dark: "#252E40", light: "#252E40" },
+    900: { dark: "#0c1629", light: "#0c1629" },
+  },
+  violet: {
+    100: { dark: "#f1d7ff", light: "#f1d7ff" },
+    500: { dark: "#bf46ff", light: "#bf46ff" },
+  },
+  special: {
+    scam: { dark: "#CC3333", light: "#f5aca6" },
+    unverified: { dark: "#ffae5a", light: "#fff8c4" },
+    outdated: { dark: "#787878", light: "#BEBEBE" },
+  },
+}
+
+// const colors = {
+//   background: { dark: '#151F32', light: '#EEF3FD' },
+//   imageBackground: { dark: '#252E40', light: undefined },
+//   primary: { dark: '#0c1629', light: '#fff' },
+//   primary64solid: { dark: '#2c3346', light: '#f3f5fe' },
+//   primary64: { dark: '#0c1629a3', light: '#ffffffa3' },
+//   main: { dark: '#5346ff', light: '#5346ff' },
+//   mainPressed: { dark: '#6b5fff', light: '#6b5fff' },
+//   text: { dark: '#fff', light: '#0c1629' },
+//   textSubtle: { dark: '#CFD6E4', light: '#3c4555' },
+//   secondary: { dark: '#252E40', light: '#e5e9f1' },
+//   link: { dark: '#5e52ff', light: '#5346ff' },
+//   list: { dark: '#252E40', light: '#eff2f8' },
+//   blue50: { dark: '#797980', light: '#f2f1ff' },
+//   blue100: { dark: '#6f6f80', light: '#dfddff' },
+//   blue200: { dark: '#636180', light: '#c8c3ff' },
+//   blue300: { dark: '#9189FF', light: '#9189FF' },
+//   blue400: { dark: '#6b5fff', light: '#6b5fff' },
+//   blue700: { dark: '#2112DA', light: '#2112DA' },
+//   green: { dark: '#0fc43b', light: '#0fc43b' },
+//   green50: { dark: '#e9faed', light: '#e9faed' },
+//   green100: { dark: '#C6F1D0', light: '#C6F1D0' },
+//   green200: { dark: '#9FE7B1', light: '#9FE7B1' },
+//   green300: { dark: '#6CDB87', light: '#6CDB87' },
+//   green400: { dark: '#44D166', light: '#44D166' },
+//   green500: { dark: '#0FC43B', light: '#0FC43B' },
+//   red: { dark: '#ff5a5a', light: '#ff5a5a' },
+//   red50: { dark: '#ffeded', light: '#ffeded' },
+//   grey: { dark: '#ccc', light: '#ccc' },
+//   grey50: { dark: '#f8fafd', light: '#f8fafd' },
+//   grey100: { dark: '#eff2f8', light: '#eff2f8' },
+//   grey200: { dark: '#e5e9f1', light: '#e5e9f1' },
+//   grey300: { dark: '#cfd6e4', light: '#cfd6e4' },
+//   grey500: { dark: '#7c8597', light: '#7c8597' },
+//   grey600: { dark: '#5d6573', light: '#5d6573' },
+//   grey700: { dark: '#3c4555', light: '#3c4555' },
+//   grey800: { dark: '#252E40', light: '#252E40' },
+//   grey900: { dark: '#0c1629', light: '#0c1629' },
+//   violet100: { dark: '#f1d7ff', light: '#f1d7ff' },
+//   violet500: { dark: '#bf46ff', light: '#bf46ff' },
+//   scam: { dark: '#CC3333', light: '#f5aca6' },
+//   unverified: { dark: '#ffae5a', light: '#fff8c4' },
+//   outdated: { dark: '#787878', light: '#BEBEBE' }
+// }
+
+export default colors

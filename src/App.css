@@ -1,0 +1,78 @@
+#root {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  /*max-width: 1280px;*/
+  min-height: 120vh;
+  width: 100vw;
+  z-index: 1;
+}
+
+nav {
+  position: fixed;
+  top: 8px;
+  height: 56px;
+  left: 10px;
+  right: 10px;
+}
+
+main {
+  position: absolute;
+  /* below nav + its top margin */
+  top: calc(8px + 56px);
+  /* above footer */
+  bottom: 56px;
+
+  /* make it fit the screen up to max-width and center */
+  left: 0;
+  right: 0;
+  max-width: 1280px;
+  margin: 16px auto;
+
+  border-radius: 16px;
+}
+
+footer {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+}
+
+.card {
+  padding: 2em;
+}
+
+thead {
+  border-radius: 16px;
+}
+
+/* TODO: put this in chakra ui style properly, or don't use chakra ui tables */
+th {
+  font-family: Gilroy !important;
+  font-weight: 600 !important;
+  border-bottom: none !important;
+  /*text-transform: none !important;*/
+}
+
+th:last-child,
+td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+th:first-child,
+td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+td {
+  font-size: 0.95em;
+}
+
+tr:hover {
+  cursor: pointer;
+}
