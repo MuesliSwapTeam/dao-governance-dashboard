@@ -11,7 +11,7 @@ import {
   Stack,
   Radio,
   Menu,
-  //MenuButton,
+  MenuButton,
   MenuItem,
   MenuList,
   Divider,
@@ -20,7 +20,7 @@ import React, { useState, useEffect } from "react"
 import { useGetTallyDetailQuery } from "../api/tallyApi"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { IoArrowBack } from "react-icons/io5"
-import { CheckIcon, PlusSquareIcon } from "@chakra-ui/icons"
+import { ChevronDownIcon, CheckIcon, PlusSquareIcon } from "@chakra-ui/icons"
 import { TiDocument, TiKey, TiCog } from "react-icons/ti"
 import { FaDollarSign, FaThumbsUp } from "react-icons/fa"
 import { Proposal } from "../api/model/tally"
@@ -37,7 +37,7 @@ import {
   GOV_TOKEN_SYMBOL,
 } from "../cardano/config"
 import ConnectButton from "../components/ConnectButton"
-//import { getStakedAmount } from "./Stake"
+import { getStakedAmount } from "./Stake"
 import { StakingPosition } from "../api/model/staking"
 import { toast } from "../components/ToastContainer"
 
@@ -137,11 +137,7 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
             return
           }
 
-
-
           if (proposal != undefined) {
-
-
             // Find first free position and use that for our initial value
             const di = d.findIndex(
               (s) =>
@@ -149,7 +145,9 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
                   (x) => x.proposal_id.toString() === proposal.id.toString(),
                 ) === -1 &&
                 s.delegated_actions.findIndex(
-                  (x) => x.participation.proposal_id.toString() === proposal.id.toString(),
+                  (x) =>
+                    x.participation.proposal_id.toString() ===
+                    proposal.id.toString(),
                 ) === -1,
             )
 
@@ -191,7 +189,6 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
       let tokenAmount = "0"
 
       if (tokenAmountOutput) tokenAmount = tokenAmountOutput.amount
-
 
       // TODO: adjust vote and voting power
       await mintAddVotePermission(
@@ -359,7 +356,7 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
               <>
                 {/* Stake Selector to support multiple votes during the same time frame */}
                 <Menu>
-                  {/*<MenuButton
+                  <MenuButton
                     as={Button}
                     rightIcon={<ChevronDownIcon />}
                     variant="outline"
@@ -368,10 +365,9 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
                     {selectedStakeId == null
                       ? "-"
                       : `${getStakedAmount(stakingPositions[selectedStakeId].funds)} ${GOV_TOKEN_SYMBOL}`}
-                  </MenuButton>*/}
+                  </MenuButton>
                   <MenuList>
                     {stakingPositions.map((v, i) => {
-
                       const alreadyVoted =
                         v.participations.findIndex(
                           (x) => x.proposal_id === proposal.id.toString(),
@@ -390,7 +386,7 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
                           isDisabled={alreadyVoted}
                         >
                           <Flex justify="space-between" align="center" w="full">
-                            {/*getStakedAmount(v.funds)*/} {GOV_TOKEN_SYMBOL}{" "}
+                            {getStakedAmount(v.funds)} {GOV_TOKEN_SYMBOL}{" "}
                             {alreadyVoted && " (already voted)"}{" "}
                             {selectedStakeId === i && <CheckIcon />}
                           </Flex>

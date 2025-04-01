@@ -21,6 +21,10 @@ import {
   Transaction,
   PlutusList,
   PlutusData,
+  MintBuilder,
+  MintWitness,
+  AssetName,
+  Int,
 } from "@emurgo/cardano-serialization-lib-browser"
 import {
   GOV_TOKEN_POLICY_ID,
@@ -30,6 +34,7 @@ import {
   TALLY_AUTH_NFT_NAME_HEX,
   STAKING_ADDR,
   STAKING_VOTE_NFT_POLICY_ID,
+  VOTE_PERMISSION_NFT_SCRIPT_HASH,
 } from "../config.ts"
 import { contract } from "./stakingScript"
 import {
@@ -47,18 +52,12 @@ import {
   StakingParams,
   StakingState,
 } from "../types/data.ts"
-import {
-  AddressBaseType,
-  EmptyList,
-  //ExtendedPosixTime,
-  //ExtendedPosixTimeBaseType,
-  //PosixTime,
-  TokenBaseType,
-} from "../types/basic.ts"
+import { AddressBaseType, EmptyList, TokenBaseType } from "../types/basic.ts"
 import { WithdrawFunds } from "../types/redeemer.ts"
 import { signSubmitTx } from "../utils/utils.ts"
 import { toast } from "../../components/ToastContainer.ts"
 import { Participation as ParticipationInterface } from "../../api/model/staking.ts"
+import { contract as mintScript } from "../tally/mintScript"
 
 function buildParticipation(
   endTimeProposal: string,
@@ -90,8 +89,6 @@ function buildParticipation(
     govToken,
     VAULT_FT_TOKEN_POLICY_ID,
   )
-
-  console.log("participation: ", proposalId, " added")
 
   const participation = Participation(tallyParams, weight, proposalIndex)
   return participation
@@ -162,6 +159,19 @@ function buildWithdrawRedeemer(stateInputIdx: string, stateOutputIdx: string) {
     BigNum.from_str("0"),
     redeemerData,
     ExUnits.new(BigNum.from_str("650000"), BigNum.from_str("300000000")),
+  )
+
+  return redeemer
+}
+
+function buildDummyBurnRedeemer() {
+  const redeemerData = EmptyList()
+
+  const redeemer = Redeemer.new(
+    RedeemerTag.new_mint(),
+    BigNum.from_str("0"),
+    redeemerData,
+    ExUnits.new(BigNum.from_str("10000"), BigNum.from_str("10000000")),
   )
 
   return redeemer
@@ -249,7 +259,17 @@ export async function unlockTokens(
   txHash: string,
   outputIdx: string,
   valuesAttached: { unit: string; quantity: number }[],
+  participations: ParticipationInterface[],
 ) {
+  /*
+  console.log('valuesAttached', valuesAttached)
+
+  valuesAttached = [
+    {unit : 'lovelace', quantity: 5728030},
+    {unit : 'bd976e131cfc3956b806967b06530e48c20ed5498b46a5eb836b61c2744d494c4b7632', quantity: 20000000}
+  ]
+    */
+
   const wallet = await getWallet()
   const protocolParameters = await getProtocolParameters()
 
@@ -294,6 +314,30 @@ export async function unlockTokens(
     contractUtxo.output().amount(),
   )
 
+  // We burn all unspent delegation NFTs
+  const mintBuilder = MintBuilder.new()
+
+  const mintRedeemer = buildDummyBurnRedeemer()
+
+  const mintWitness = MintWitness.new_plutus_script(
+    PlutusScriptSource.new(PlutusScript.new_v2(fromHex(mintScript))),
+    mintRedeemer,
+  )
+
+  for (let i = 0; i < valuesAttached.length; i += 1) {
+    if (
+      valuesAttached[i].unit.slice(0, 56) === VOTE_PERMISSION_NFT_SCRIPT_HASH
+    ) {
+      mintBuilder.add_asset(
+        mintWitness,
+        AssetName.new(fromHex(valuesAttached[i].unit.slice(56))),
+        Int.from_str((-1 * valuesAttached[i].quantity).toString()),
+      )
+    }
+  }
+
+  txBuilder.set_mint_builder(mintBuilder)
+
   // compute costmdl
   const costmdls = Costmdls.from_json(
     JSON.stringify(protocolParameters.costModels),
@@ -327,12 +371,14 @@ export async function unlockTokens(
   txBuilder.set_collateral(txInputsBuilder)
 
   // add necessary outputs
-  const outputAssets = [{ unit: "lovelace", quantity: 2e6 }]
+  const outputAssets = [{ unit: "lovelace", quantity: 1e6 }]
+
   const output = createOutputInlineDatum(
     scriptAddr,
     assetsToValue(outputAssets),
-    buildStakingState(walletAddress, undefined),
+    buildStakingState(walletAddress, participations),
   )
+
   txBuilder.add_output(output)
 
   txBuilder.add_change_if_needed(

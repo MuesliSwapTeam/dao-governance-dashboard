@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-use-before-define */
-// NOTE pjordan: These are all only used for type annotations
 import {
   BigNum,
   TransactionUnspentOutput,

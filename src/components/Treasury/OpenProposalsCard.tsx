@@ -57,6 +57,7 @@ const OpenProposalsCard = ({ proposals }: { proposals: Proposal[] }) => {
             {proposals.map((vote, index) => (
               <Tr
                 key={index}
+                _hover={{ cursor: "pointer" }}
                 onClick={() => {
                   window.open(
                     `/proposals/${vote.authNft.policyId + "." + vote.authNft.name}/${vote.id}`,

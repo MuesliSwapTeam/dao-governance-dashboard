@@ -1,6 +1,19 @@
 import { Token, Asset } from "./common"
 import { TreasuryAsset } from "./treasury"
 
+interface TallyMetadata {
+  title: string
+  description: string
+  short_description: string
+  creator_name: string
+  forum_link: string
+}
+
+interface ProposalMetadata {
+  title: string
+  description: string
+}
+
 export interface Participation {
   end_time: string // can be None in "parse_delegated_actions"
   weight: string
@@ -12,6 +25,8 @@ export interface Participation {
     output_index: number
   }
   tally_auth_nft?: Token
+  tally_metadata?: TallyMetadata
+  proposal_metadata?: ProposalMetadata
 }
 
 export interface DelegatedAction {

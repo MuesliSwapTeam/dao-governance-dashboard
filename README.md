@@ -24,6 +24,16 @@ This milestone focuses on implementing the essential governance functionalities:
 - **👀 Proposal Viewing** – See a list of active proposals along with details such as descriptions and statuses.  
 - **🏦 Treasury Management (Basic)** – View DAO treasury balance and create treasury transactions
 
+
+### ✅ **Milestone 3: Transaction Builder Implementation**  
+This milestone focuses on implementing the constructions of the transaction necessary to interact with the DAO Smart Contracts:
+
+- **👀 Staking** – Stake(Lock) und Unstake (Unlock) Governance Tokens and view current staking positions
+- **📜 Proposal Voting** – Users can create on-chain proposals and vote for community proposals through on-chain voting
+- **👀 Proposal Viewing** – View detailed information on proposals including voting results
+- **🏦 Treasury Overview** – View DAO treasury history and value development
+
+
 ## **Tech Stack**  
 
 The project is built using modern web technologies and Cardano-specific tooling:  

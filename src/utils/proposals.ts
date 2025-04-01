@@ -13,7 +13,7 @@ export const isLicenseReleaseProposal = (p: Proposal) => {
 
 export const parseLicenseReleaseArgs = (proposal: Proposal) => {
   const licenseArgs = proposal.votes[1].args as any // VoteArgsMap["LicenseArgs"]
-  // TODO pjordan: Properly transform binary to cbor
+  // TODO : Properly transform binary to cbor
   const address = licenseArgs.fields[0].fields[0].fields[0].bytes
   const datum = licenseArgs.fields[1]
   const maximumFutureValidity = licenseArgs.fields[2].int

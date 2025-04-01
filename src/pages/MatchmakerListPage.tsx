@@ -81,7 +81,7 @@ const MatchmakerList: React.FC<{ proposals: Proposal[] }> = ({ proposals }) => {
                 <Heading size="sm">Wallet Address: </Heading>
                 <Flex align={"center"}>
                   <Text>{licenseArgs.address}</Text>
-                  {/* TODO pjordan: Figure out how to make margins smaller */}
+                  {/* TODO : Figure out how to make margins smaller */}
                   <IconButton
                     size="md"
                     variant="skeleton"
@@ -164,7 +164,7 @@ const MatchmakerList: React.FC<{ proposals: Proposal[] }> = ({ proposals }) => {
 }
 
 const MatchmakerListPage: React.FC = () => {
-  // NOTE pjordan: We should add a filter for licenses to the BE
+  // NOTE : We should add a filter for licenses to the BE
   const {
     data: tallies = [],
     isLoading,
@@ -197,7 +197,7 @@ const MatchmakerListPage: React.FC = () => {
           <MdSwapHoriz size="32px" style={{ marginRight: "8px" }} />
           Matchmaker Licenses
         </Heading>
-        {/* TODO pjordan: Add this */}
+        {/* TODO : Add this */}
         <Link to={`/matchmakers/create`}>
           <Button
             leftIcon={<TiPlus />}

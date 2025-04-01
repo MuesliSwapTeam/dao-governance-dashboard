@@ -63,6 +63,9 @@ const NavBar: React.FC = () => {
       <Button variant="ghost" onClick={() => navigate("/treasury")}>
         Treasury
       </Button>
+      <Button variant="ghost" onClick={() => navigate("/stake")}>
+        My Stake
+      </Button>
       {/*
       Remove matchmaker link for testnet
       <Button variant="ghost" onClick={() => navigate("/matchmakers")}>

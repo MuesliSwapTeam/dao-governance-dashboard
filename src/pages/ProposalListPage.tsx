@@ -167,7 +167,7 @@ const ProposalListPage: React.FC = () => {
             Propose Idea
           </Button>
         </Link>
-        {/* TODO pjordan: Add button "Show Governance Thread", 
+        {/* TODO : Add button "Show Governance Thread", 
                             which opens a small status modal/view of the current governance thread 
                             and some information about it 
 
@@ -203,13 +203,13 @@ const ProposalListPage: React.FC = () => {
               >
                 Open Proposals
               </Tab>
-              {/*<Tab
+              <Tab
                 borderRadius="6px"
                 border="1px solid grey"
                 _selected={{ color: "white", bg: "red.500" }}
               >
                 Closed Proposals
-              </Tab>*/}
+              </Tab>
             </TabList>
             <Menu>
               <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>

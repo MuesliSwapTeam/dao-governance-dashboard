@@ -272,6 +272,9 @@ function buildProposalList(proposals: Vote[]) {
         treasuryBenefactor,
         assetsToValue((proposal.args as FundPayoutArgs).assets),
       )
+
+      console.log("txOut", outputTx.to_hex())
+
       proposalList.push(FundPayoutParams(outputTx))
     }
   }

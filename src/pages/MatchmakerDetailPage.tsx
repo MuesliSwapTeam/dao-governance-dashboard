@@ -110,7 +110,7 @@ const MatchmakerDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
           gap={"8px"}
         >
           <Text>{licenseArgs.address}</Text>
-          {/* TODO pjordan: Figure out how to make margins smaller */}
+          {/* TODO : Figure out how to make margins smaller */}
           {/*           <Button p="0" size="sm" aria-label="Show on cardanoscan" as={FaShareAltSquare} onClick={() => window.open(`https://cardanoscan.io/address/${licenseArgs}`, '_blank')} />
           <Button p="0" size="sm" aria-label="Show on cexplorer" as={FaShareNodes} onClick={() => window.open(`https://cardanoscan.io/address/${licenseArgs}`, '_blank')} />
           <Button p="0" size="sm" aria-label="Show on taptools" as={FaShareAlt} onClick={() => window.open(`https://cardanoscan.io/address/${licenseArgs}`, '_blank')} /> */}
@@ -141,7 +141,7 @@ const MatchmakerDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
         End Date: {new Date(proposal.endDate).toLocaleString()}
       </Text>
 
-      {/* TODO pjordan: A history of last matches/profits/... would be nice here :) */}
+      {/* TODO : A history of last matches/profits/... would be nice here :) */}
 
       {/*     <>
       <Box height="400px" />

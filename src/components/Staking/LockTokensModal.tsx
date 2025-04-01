@@ -24,9 +24,9 @@ import {
 } from "@chakra-ui/react"
 import { useState, FC } from "react"
 import { CheckCircleIcon } from "@chakra-ui/icons"
-import { lockTokens } from "../cardano/staking/base"
-import { toNativeAmount } from "../utils/numericHelpers"
-import { GOV_TOKEN_DECIMALS } from "../cardano/config"
+import { lockTokens } from "../../cardano/staking/base"
+import { toNativeAmount } from "../../utils/numericHelpers"
+import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
 
 interface LockTokensModalProps {
   isOpen: boolean

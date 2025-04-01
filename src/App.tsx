@@ -12,7 +12,7 @@ import { store } from "./store"
 
 import HomePage from "./pages/HomePage"
 import TreasuryPage from "./pages/Treasury"
-// import StakePage from "./pages/Stake"
+import StakePage from "./pages/Stake"
 import ProposalsListPage from "./pages/ProposalListPage"
 import CreateProposalPage from "./pages/CreateProposal"
 import ProposalDetailPage from "./pages/ProposalDetailPage"
@@ -29,10 +29,16 @@ declare global {
 }
 
 function App() {
-
-  const isDesktop = useBreakpointValue({ base: false, sm: false, md: true, lg: true, xl: true, '2xl': true });
+  const isDesktop = useBreakpointValue({
+    base: false,
+    sm: false,
+    md: true,
+    lg: true,
+    xl: true,
+    "2xl": true,
+  })
   if (!isDesktop) {
-    return <MobileNotSupportedPage />;
+    return <MobileNotSupportedPage />
   }
 
   return (
@@ -50,7 +56,7 @@ function App() {
                 path="/matchmakers/:authNft/:id"
                 element={<MatchmakerDetailPage />}
               />
-              {/*<Route path="/stake" element={<StakePage />} />*/}
+              <Route path="/stake" element={<StakePage />} />
               <Route path="/treasury" element={<TreasuryPage />} />
               <Route path="/proposals" element={<ProposalsListPage />} />
               <Route

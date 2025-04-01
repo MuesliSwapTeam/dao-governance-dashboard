@@ -72,7 +72,3 @@ td:first-child {
 td {
   font-size: 0.95em;
 }
-
-tr:hover {
-  cursor: pointer;
-}

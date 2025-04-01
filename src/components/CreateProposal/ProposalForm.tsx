@@ -437,7 +437,7 @@ const ProposalForm = () => {
               colorScheme="blue"
               mr={3}
               onClick={() => {
-                /* TODO pjordan: Make this configurable */
+                /* TODO : Make this configurable */
                 const url = `https://preprod.cardanoscan.io/transaction/${txHash}`
                 window.open(url, "_blank")
               }}

@@ -23,6 +23,7 @@ import {
   TransactionUnspentOutputs,
   TransactionUnspentOutput,
   PlutusMapValues,
+  hash_plutus_data,
 } from "@emurgo/cardano-serialization-lib-browser"
 import Fraction from "fraction.js"
 import { sha256 } from "js-sha256"
@@ -224,6 +225,36 @@ export function createOutputInlineDatum(
   return outputFinal
 }
 
+export function createOutputDatumHash(
+  address: Address,
+  value: Value,
+  datum: PlutusData,
+): TransactionOutput {
+  const v = value
+
+  const output = TransactionOutput.new(address, v)
+
+  const datumHash = hash_plutus_data(datum)
+
+  if (datum) {
+    output.set_data_hash(datumHash)
+  }
+
+  // TODO: replace with correct parameter value
+  const dataCost = DataCost.new_coins_per_byte(BigNum.from_str("4310"))
+  const minAda = min_ada_for_output(output, dataCost)
+
+  if (minAda.compare(v.coin()) == 1) v.set_coin(minAda)
+
+  const outputFinal = TransactionOutput.new(address, v)
+
+  if (datum) {
+    outputFinal.set_data_hash(datumHash)
+  }
+
+  return outputFinal
+}
+
 export function getSha256HashByte(text: Uint8Array): string {
   const hash = sha256.update(text)
   return hash.hex()
@@ -318,7 +349,6 @@ export function unixTimeToSlot(unixTime: number): number {
 
 // Function to convert Value to PlutusData
 export function valueToPlutusData(value: Value): PlutusData {
-  // TODO raunc: Fix all these type casts below (as unknown as PlutusMapValues)
   // They are only there so I could get the build working
   const multiassetMap = PlutusMap.new()
 

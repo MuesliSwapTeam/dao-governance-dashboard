@@ -22,7 +22,7 @@ import {
 import PieChart from "../components/Treasury/PieChart" // Adjust the path as necessary
 import LineChart from "../components/Treasury/LineChart" // Adjust the path as necessary
 import { LiaCoinsSolid } from "react-icons/lia"
-//import HistoryCard from "../components/Treasury/HistoryCard"
+import HistoryCard from "../components/Treasury/HistoryCard"
 import OpenProposalsCard from "../components/Treasury/OpenProposalsCard"
 import {
   useGetTreasuryFundsQuery,
@@ -65,13 +65,13 @@ const Treasury: React.FC = () => {
     isUninitialized: talliesIsUninitialized,
   } = useGetTalliesQuery({ open: true, closed: false })
 
-  /*const transactions = useMemo(() => {
+  const transactions = useMemo(() => {
     if (historyIsLoading || historyIsUninitialized || !history) return []
 
     return history
       .filter(({ action }) => action !== "consolidate")
       .map(({ transaction_hash, delta, action, timestamp }) => {
-        // TODO pjordan: Figure out payout field and add support to link to daoDecision
+        // TODO : Figure out payout field and add support to link to daoDecision
         return {
           type: action.charAt(0).toUpperCase() + action.substring(1),
           amounts: delta,
@@ -82,7 +82,7 @@ const Treasury: React.FC = () => {
           daoDecision: undefined,
         }
       })
-  }, [historyIsLoading, historyIsUninitialized, history]*/
+  }, [historyIsLoading, historyIsUninitialized, history])
 
   const [totalAssets, assets] = useMemo(() => {
     if (fundsIsLoading || fundsIsUninitialized || !treasuryAssets)
@@ -101,7 +101,7 @@ const Treasury: React.FC = () => {
     return [total, assetList]
   }, [fundsIsLoading, fundsIsUninitialized, treasuryAssets])
 
-  // TODO pjordan: Add loading screen
+  // TODO : Add loading screen
   if (
     fundsIsLoading ||
     fundsIsUninitialized ||
@@ -153,7 +153,7 @@ const Treasury: React.FC = () => {
             {formatNumberFixed(fromNativeAmount(totalAssets, 6), 2)} ADA
           </Text>
           <Text fontSize="2xl" color={textSbColor}>
-            $- {/* TODO pjordan: Add this */}
+            $- {/* TODO : Add this */}
           </Text>
         </Box>
       </Flex>
@@ -168,18 +168,18 @@ const Treasury: React.FC = () => {
           >
             Treasury Transactions
           </Tab>
-          {/*<Tab
+          <Tab
             borderRadius="6px"
             border="1px solid grey"
             mr="4px"
             _selected={{ color: "white", bg: accentColor }}
           >
             Asset Breakdown
-          </Tab>*/}
+          </Tab>
         </TabList>
         <TabPanels>
           <TabPanel display="flex" flexDir="column" rowGap="6">
-            {/*<HistoryCard transactions={transactions} />*/}
+            <HistoryCard transactions={transactions} />
             <OpenProposalsCard proposals={openTallies} />
           </TabPanel>
 

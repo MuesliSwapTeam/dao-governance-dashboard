@@ -19,29 +19,24 @@ import {
   Flex,
 } from "@chakra-ui/react"
 import { CheckCircleIcon } from "@chakra-ui/icons"
-import { unlockTokens } from "../cardano/staking/base"
-import { formatNumber, fromNativeAmount } from "../utils/numericHelpers"
-import {
-  GOV_TOKEN_DECIMALS,
-  GOV_TOKEN_NAME_HEX,
-  GOV_TOKEN_POLICY_ID,
-  GOV_TOKEN_SYMBOL,
-  VAULT_FT_TOKEN_POLICY_ID,
-  VAULT_FT_TOKEN_SYMBOL,
-} from "../cardano/config"
-import { StakingPosition } from "../api/model/staking"
-import { Asset } from "../api/model/common"
+import { mintRetractVotePermission } from "../../cardano/staking/revoke_vote"
+import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
+import { Participation, StakingPosition } from "../../api/model/staking"
+import { Asset } from "../../api/model/common"
+import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
 
-interface UnlockTokensModalProps {
+interface RevokeVoteModalProps {
   isOpen: boolean
   onClose: () => void
   position: StakingPosition
+  participation: Participation
 }
 
-const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
+const RevokeVoteModal: FC<RevokeVoteModalProps> = ({
   isOpen,
   onClose,
   position,
+  participation,
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,20 +59,26 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
     return valueList
   }
 
-  const handleUnlockTokens = async () => {
+  const handleRevokeVote = async () => {
     setIsLoading(true)
     setError(null)
     setTxHash(null)
     try {
-      const hash = await unlockTokens(
+      const hash = await mintRetractVotePermission(
+        convertToValue(position.funds),
         position.transaction_hash,
         position.output_index.toString(),
-        convertToValue(position.funds),
+        participation.weight,
+        participation.proposal_id,
+        participation.end_time,
+        participation.proposal_index.toString(),
+        position.participations,
       )
+
       setTxHash(hash)
     } catch (error) {
-      console.error("Unlock transaction failed", error)
-      setError("Unlock transaction failed. Please try again.")
+      console.error("Revoke transaction failed", error)
+      setError("Revoke transaction failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -90,30 +91,6 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
     onClose()
   }
 
-  const getGovTokenAmount = (funds: Asset[]) => {
-    funds = funds.filter(
-      (x) =>
-        x.policy_id === GOV_TOKEN_POLICY_ID &&
-        x.asset_name === GOV_TOKEN_NAME_HEX,
-    )
-    if (funds.length === 0) return "0 " + GOV_TOKEN_SYMBOL
-    const amount = fromNativeAmount(funds[0].amount, GOV_TOKEN_DECIMALS)
-    return formatNumber(amount, GOV_TOKEN_DECIMALS) + " " + GOV_TOKEN_SYMBOL
-  }
-
-  const getFTAMount = (funds: Asset[]) => {
-    funds = funds.filter((x) => x.policy_id === VAULT_FT_TOKEN_POLICY_ID)
-    if (funds.length === 0) return "0 " + VAULT_FT_TOKEN_SYMBOL
-    const ftSum = funds.reduce(
-      (acc, curr) => Number(acc) + Number(curr.amount),
-      0,
-    )
-    const amount = fromNativeAmount(ftSum, GOV_TOKEN_DECIMALS)
-    return (
-      formatNumber(amount, GOV_TOKEN_DECIMALS) + " " + VAULT_FT_TOKEN_SYMBOL
-    )
-  }
-
   const bgColor = useColorModeValue("background.light", "background.dark")
   const successColor = useColorModeValue("greens.500.light", "greens.500.dark")
 
@@ -122,18 +99,14 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
       <ModalOverlay />
       <ModalContent bg={bgColor}>
         <ModalHeader textAlign="center" fontSize="xl" fontWeight="bold" p={4}>
-          {isLoading
-            ? "Unlocking Tokens"
-            : txHash
-              ? "Success"
-              : "Unlock Tokens"}
+          {isLoading ? "Revoking Vote" : txHash ? "Success" : "Revoke Vote"}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody p={6}>
           {isLoading ? (
             <Box textAlign="center">
               <Spinner size="xl" />
-              <Text mt={4}>Unlocking tokens, please wait...</Text>
+              <Text mt={4}>Revoking Vote, please wait...</Text>
             </Box>
           ) : error ? (
             <Alert
@@ -153,7 +126,7 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
             <Box textAlign="center" color={successColor}>
               <Flex justify="center" align="center" gap="1em" mb="1em">
                 <Icon as={CheckCircleIcon} w={10} h={10} />
-                <Text fontSize="lg">Unlock Transaction Successful!</Text>
+                <Text fontSize="lg">Revoke Transaction Successful!</Text>
               </Flex>
               <Button
                 as="a"
@@ -170,16 +143,25 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
             <>
               <Box mb={4}>
                 <Text fontSize="md" mb={2}>
-                  <b>Tokens locked:</b> {getGovTokenAmount(position.funds)} +{" "}
-                  {getFTAMount(position.funds)}
+                  <b>Proposal: </b> {participation.tally_metadata?.title}
+                </Text>
+                <Text fontSize="md" mb={2}>
+                  <b>Vote: </b> {participation.proposal_metadata?.title}
+                </Text>
+                <Text fontSize="md" mb={2}>
+                  <b>Vote Weight: </b>{" "}
+                  {formatNumber(
+                    fromNativeAmount(participation.weight, GOV_TOKEN_DECIMALS),
+                    GOV_TOKEN_DECIMALS,
+                  )}
                 </Text>
               </Box>
               <Flex justify="space-evenly" mt={6} gap={2}>
-                <Button onClick={handleUnlockTokens} size="lg" flex="2">
-                  Unlock
+                <Button onClick={handleRevokeVote} size="lg" flex="1">
+                  Revoke Vote
                 </Button>
                 <Button variant="outline" onClick={onClose} size="lg" flex="1">
-                  Close
+                  Cancel
                 </Button>
               </Flex>
             </>
@@ -190,4 +172,4 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
   )
 }
 
-export default UnlockTokensModal
+export default RevokeVoteModal
