@@ -9,7 +9,6 @@ import {
   Int,
   MintBuilder,
   MintWitness,
-  PlutusScript,
   PlutusScriptSource,
   PlutusWitness,
   Redeemer,
@@ -20,8 +19,9 @@ import {
   TransactionOutput,
   TransactionUnspentOutput,
   TransactionWitnessSet,
-  TxInputsBuilder,
   Ed25519KeyHash,
+  ScriptHash,
+  Language,
 } from "@emurgo/cardano-serialization-lib-browser"
 import { blake2b } from "blakejs"
 
@@ -34,21 +34,27 @@ import {
   selectInputUtxos,
   toHex,
   unixTimeToSlot,
+  buildCollateralInputs,
 } from "../utils/utils"
 import { getWallet, getWalletAddress } from "../wallet"
 import {
   GOV_TOKEN_NAME_HEX,
   GOV_TOKEN_POLICY_ID,
   STAKING_ADDR,
+  STAKING_REF_INDEX,
+  STAKING_REF_TRANSACTION_HASH,
+  STAKING_SCRIPT_HASH,
+  STAKING_REF_SCRIPT_SIZE,
   STAKING_VOTE_NFT_POLICY_ID,
   TALLY_AUTH_NFT_NAME_HEX,
   TALLY_AUTH_NFT_POLICY_ID,
   VAULT_FT_TOKEN_POLICY_ID,
   VOTE_PERMISSION_NFT_SCRIPT_HASH,
+  VOTE_PERMISSION_NFT_REF_SCRIPT_SIZE,
+  VOTE_PERMISSION_NFT_REF_TRANSACTION_HASH,
+  VOTE_PERMISSION_NFT_REF_INDEX,
 } from "../config"
-import { contract } from "./stakingScript"
 import { AddFunds } from "../types/redeemer"
-import { contract as mintScript } from "../tally/mintScript"
 import {
   DelegatedRetractVote,
   Participation,
@@ -71,7 +77,7 @@ function buildAddRedeemer(stateInputIdx: string, stateOutputIdx: string) {
     RedeemerTag.new_spend(),
     BigNum.from_str("0"),
     redeemerData,
-    ExUnits.new(BigNum.from_str("1000000"), BigNum.from_str("400000000")),
+    ExUnits.new(BigNum.from_str("2500000"), BigNum.from_str("900000000")),
   )
 
   return redeemer
@@ -134,7 +140,7 @@ function buildRevokeVotePermissionRedeemer(
     RedeemerTag.new_mint(),
     BigNum.from_str("0"),
     redeemerData,
-    ExUnits.new(BigNum.from_str("1000000"), BigNum.from_str("500000000")),
+    ExUnits.new(BigNum.from_str("300000"), BigNum.from_str("200000000")),
   )
 
   return redeemer
@@ -191,8 +197,19 @@ export async function mintRetractVotePermission(
     ),
   )
 
-  const stakingScript = PlutusScript.new_v2(fromHex(contract))
-  const stakingScriptSource = PlutusScriptSource.new(stakingScript)
+  // const stakingScript = PlutusScript.new_v2(fromHex(contract))
+  // const stakingScriptSource = PlutusScriptSource.new(stakingScript)
+
+  const stakingScriptHash = ScriptHash.from_hex(STAKING_SCRIPT_HASH)
+  const stakingScriptSource = PlutusScriptSource.new_ref_input(
+    stakingScriptHash,
+    TransactionInput.new(
+      TransactionHash.from_hex(STAKING_REF_TRANSACTION_HASH),
+      Number(STAKING_REF_INDEX),
+    ),
+    Language.new_plutus_v2(),
+    STAKING_REF_SCRIPT_SIZE,
+  )
 
   const datumSource = DatumSource.new_ref_input(stakingUtxo.input())
 
@@ -235,8 +252,27 @@ export async function mintRetractVotePermission(
   )
 
   // ADD NFT MINTING
-  const mintScriptReference = PlutusScriptSource.new(
-    PlutusScript.new_v2(fromHex(mintScript)),
+  // const mintScriptReference = PlutusScriptSource.new(
+  //   PlutusScript.new_v2(fromHex(mintScript)),
+  // )
+
+  // const tallyNftScriptHash = ScriptHash.from_hex(TALLY_AUTH_NFT_SCRIPT_HASH)
+  // const tallyNftRefInput = TransactionInput.new(
+  //   TransactionHash.from_hex(TALLY_AUTH_NFT_REF_TRANSACTION_HASH),
+  //   TALLY_AUTH_NFT_REF_INDEX,
+  // )
+
+  const voteNftScriptHash = ScriptHash.from_hex(VOTE_PERMISSION_NFT_SCRIPT_HASH)
+  const voteNftRefInput = TransactionInput.new(
+    TransactionHash.from_hex(VOTE_PERMISSION_NFT_REF_TRANSACTION_HASH),
+    VOTE_PERMISSION_NFT_REF_INDEX,
+  )
+
+  const mintScriptReference = PlutusScriptSource.new_ref_input(
+    voteNftScriptHash,
+    voteNftRefInput,
+    Language.new_plutus_v2(),
+    VOTE_PERMISSION_NFT_REF_SCRIPT_SIZE,
   )
 
   const mintRedeemer = buildRevokeVotePermissionRedeemer(
@@ -292,32 +328,6 @@ export async function mintRetractVotePermission(
 
   txBuilder.add_output(stakingScriptOutput)
 
-  // create collateral output
-  const walletCollateral = await wallet.experimental.getCollateral()
-  const collateralUtxo = walletCollateral
-    ?.map((utxo: string) => TransactionUnspentOutput.from_bytes(fromHex(utxo)))
-    ?.at(0)
-
-  if (!collateralUtxo) {
-    toast({
-      title: "Vote Revoke Error",
-      description: `Collateral not found. Please set your collateral to continue`,
-      status: "error",
-      duration: 5000,
-      isClosable: true,
-    })
-    return Promise.reject(`An error occurred: \nCollateral not set`)
-  }
-
-  const txInputsBuilder = TxInputsBuilder.new()
-  txInputsBuilder.add_regular_input(
-    collateralUtxo.output().address(),
-    collateralUtxo.input(),
-    collateralUtxo.output().amount(),
-  )
-
-  txBuilder.set_collateral(txInputsBuilder)
-
   const costmdls = Costmdls.from_json(
     JSON.stringify(protocolParameters.costModels),
   )
@@ -326,6 +336,12 @@ export async function mintRetractVotePermission(
   const currentTime = Date.now() + 240 * 1000
   const slot = unixTimeToSlot(currentTime)
   txBuilder.set_ttl_bignum(BigNum.from_str(slot.toString()))
+
+  const collateralInputs = await buildCollateralInputs(
+    wallet,
+    "Vote Revoke Error",
+  )
+  txBuilder.set_collateral(collateralInputs)
 
   txBuilder.add_change_if_needed(
     walletAddress?.to_address() ??
@@ -364,6 +380,8 @@ export async function mintRetractVotePermission(
     witnessSet,
     unsignedTransaction.auxiliary_data(),
   )
+
+  console.log("Signed Tx: ", signedTx.to_hex())
 
   try {
     const txHash = await wallet.submitTx(signedTx.to_hex())

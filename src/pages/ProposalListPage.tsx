@@ -167,7 +167,7 @@ const ProposalListPage: React.FC = () => {
             Propose Idea
           </Button>
         </Link>
-        {/* TODO : Add button "Show Governance Thread", 
+        {/* TODO: Add button "Show Governance Thread", 
                             which opens a small status modal/view of the current governance thread 
                             and some information about it 
 

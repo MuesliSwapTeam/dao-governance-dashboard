@@ -10,17 +10,20 @@ import {
   RadioGroup,
   Stack,
   Radio,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Divider,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  SliderMark,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react"
 import React, { useState, useEffect } from "react"
 import { useGetTallyDetailQuery } from "../api/tallyApi"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { IoArrowBack } from "react-icons/io5"
-import { ChevronDownIcon, CheckIcon, PlusSquareIcon } from "@chakra-ui/icons"
 import { TiDocument, TiKey, TiCog } from "react-icons/ti"
 import { FaDollarSign, FaThumbsUp } from "react-icons/fa"
 import { Proposal } from "../api/model/tally"
@@ -31,13 +34,9 @@ import { mintAddVotePermission } from "../cardano/staking/add_vote"
 import { useLazyGetStakingPositionsQuery } from "../api/stakingApi"
 import useWalletContext from "../context/wallet"
 import { getWalletAddress } from "../cardano/wallet"
-import {
-  GOV_TOKEN_NAME_HEX,
-  GOV_TOKEN_POLICY_ID,
-  GOV_TOKEN_SYMBOL,
-} from "../cardano/config"
+import { GOV_TOKEN_SYMBOL, GOV_TOKEN_DECIMALS } from "../cardano/config"
 import ConnectButton from "../components/ConnectButton"
-import { getStakedAmount } from "./Stake"
+import { getBestAvailableStakingPosition } from "./Stake"
 import { StakingPosition } from "../api/model/staking"
 import { toast } from "../components/ToastContainer"
 
@@ -102,6 +101,13 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
     }
     if (isConnected) {
       fetchWalletAddress()
+    } else {
+      // Clean up state when wallet disconnects
+      setWalletAddressHex(null)
+      setSelection("")
+      setSelectedVotingPower(0)
+      setMaxVotingPower(0)
+      setBestPosition(null)
     }
   }, [isConnected])
 
@@ -110,102 +116,110 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
     { isLoading: isStakingLoading, isUninitialized: isStakingUninitialized },
   ] = useLazyGetStakingPositionsQuery()
 
-  const [stakingPositions, setStakingPositions] = useState<StakingPosition[]>(
-    [],
-  )
-  const [selectedStakeId, setSelectedStakeId] = useState<number>()
   const [selection, setSelection] = useState("")
+  const [selectedVotingPower, setSelectedVotingPower] = useState<number>(0)
+  const [maxVotingPower, setMaxVotingPower] = useState<number>(0)
+  const [bestPosition, setBestPosition] = useState<{
+    position: StakingPosition
+    votingPower: number
+    index: number
+  } | null>(null)
 
   useEffect(() => {
     if (isConnected && walletAddressHex) {
-      fetchFn({ wallet: walletAddressHex }).then(({ data: resData }) => {
-        if (resData != null) {
-          const d = [...resData]
-          d.sort(function (a, b) {
-            return a.transaction_hash.localeCompare(b.transaction_hash)
-          })
+      // Reset state before fetching new data
+      setSelectedVotingPower(0)
+      setMaxVotingPower(0)
+      setBestPosition(null)
 
-          if (!d.length) {
-            toast({
-              title: "No Staking Positions found",
-              description: `Before you can vote, you need to stake some ${GOV_TOKEN_SYMBOL} first`,
-              status: "error",
-              duration: 5000,
-              isClosable: true,
+      fetchFn({ wallet: walletAddressHex })
+        .then(({ data: resData }) => {
+          if (resData != null) {
+            const d = [...resData]
+            d.sort(function (a, b) {
+              return a.transaction_hash.localeCompare(b.transaction_hash)
             })
 
-            return
-          }
-
-          if (proposal != undefined) {
-            // Find first free position and use that for our initial value
-            const di = d.findIndex(
-              (s) =>
-                s.participations.findIndex(
-                  (x) => x.proposal_id.toString() === proposal.id.toString(),
-                ) === -1 &&
-                s.delegated_actions.findIndex(
-                  (x) =>
-                    x.participation.proposal_id.toString() ===
-                    proposal.id.toString(),
-                ) === -1,
-            )
-
-            if (di === -1) {
+            if (!d.length) {
               toast({
-                title: "No Open Staking Position found",
-                description: `All your staking positions are currently in use. You will have to wait until they are unlocked again or create new staking positions`,
-                status: "warning",
+                title: "No Staking Positions found",
+                description: `Before you can vote, you need to stake some ${GOV_TOKEN_SYMBOL} first`,
+                status: "error",
                 duration: 5000,
                 isClosable: true,
               })
-              setStakingPositions(d)
               return
             }
 
-            setStakingPositions(d)
-            setSelectedStakeId(di)
+            if (proposal != undefined) {
+              // Find the best available staking position
+              const bestAvailablePosition = getBestAvailableStakingPosition(
+                d,
+                proposal.id.toString(),
+                proposal.endDatePosix,
+              )
+
+              setBestPosition(bestAvailablePosition)
+
+              if (bestAvailablePosition) {
+                setMaxVotingPower(bestAvailablePosition.votingPower)
+                setSelectedVotingPower(bestAvailablePosition.votingPower) // Default to max voting power
+              } else {
+                setMaxVotingPower(0)
+                setSelectedVotingPower(0)
+                toast({
+                  title: "No Available Voting Power",
+                  description: `All your staking positions are currently in use or you don't have any staking positions. You will have to wait until they are unlocked again or create new staking positions`,
+                  status: "warning",
+                  duration: 5000,
+                  isClosable: true,
+                })
+              }
+            } else {
+              // Reset states if no proposal context
+            }
           }
-        }
-      })
+        })
+        .catch((error) => {
+          console.error("Failed to fetch staking positions:", error)
+          toast({
+            title: "Error loading staking positions",
+            description:
+              "Please try refreshing the page or reconnecting your wallet",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          })
+        })
     }
-  }, [walletAddressHex, isConnected])
+  }, [walletAddressHex, isConnected, proposal])
 
   const handleOnClick = async () => {
     try {
-      if (
-        stakingPositions == undefined ||
-        !stakingPositions.length ||
-        selectedStakeId == undefined ||
-        proposal == undefined
-      )
+      if (proposal == undefined || selectedVotingPower <= 0 || !bestPosition)
         return
 
-      const tokenAmountOutput = stakingPositions[selectedStakeId].funds.find(
-        (x) =>
-          x.policy_id === GOV_TOKEN_POLICY_ID &&
-          x.asset_name === GOV_TOKEN_NAME_HEX,
-      )
-      let tokenAmount = "0"
+      // Use the selected voting power as the weight (convert to native units)
+      const votingPowerNative = Math.floor(
+        selectedVotingPower * Math.pow(10, GOV_TOKEN_DECIMALS),
+      ).toString()
 
-      if (tokenAmountOutput) tokenAmount = tokenAmountOutput.amount
-
-      // TODO: adjust vote and voting power
+      // Vote using the best available position with the selected voting power
       await mintAddVotePermission(
-        stakingPositions[selectedStakeId].funds.map((x) => {
+        bestPosition.position.funds.map((x) => {
           return {
             unit: x.policy_id === "" ? "lovelace" : x.policy_id + x.asset_name,
             quantity: Number(x.amount),
           }
         }),
-        stakingPositions[selectedStakeId].transaction_hash,
-        stakingPositions[selectedStakeId].output_index.toString(),
-        tokenAmount,
+        bestPosition.position.transaction_hash,
+        bestPosition.position.output_index.toString(),
+        votingPowerNative,
         proposal.id.toString(),
-        proposal.endDatePosix.toString(),
+        proposal.endDatePosix?.toString() ?? null,
         selection,
-        stakingPositions[selectedStakeId].participations.length > 0
-          ? stakingPositions[selectedStakeId].participations
+        bestPosition.position.participations.length > 0
+          ? bestPosition.position.participations
           : undefined,
       )
     } catch (error) {
@@ -352,64 +366,64 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
 
             {!isConnected ? (
               <ConnectButton longName />
-            ) : (
-              <>
-                {/* Stake Selector to support multiple votes during the same time frame */}
-                <Menu>
-                  <MenuButton
-                    as={Button}
-                    rightIcon={<ChevronDownIcon />}
-                    variant="outline"
-                  >
-                    Selected Stake:{" "}
-                    {selectedStakeId == null
-                      ? "-"
-                      : `${getStakedAmount(stakingPositions[selectedStakeId].funds)} ${GOV_TOKEN_SYMBOL}`}
-                  </MenuButton>
-                  <MenuList>
-                    {stakingPositions.map((v, i) => {
-                      const alreadyVoted =
-                        v.participations.findIndex(
-                          (x) => x.proposal_id === proposal.id.toString(),
-                        ) !== -1 ||
-                        v.delegated_actions.findIndex(
-                          (x) =>
-                            x.participation.proposal_id.toString() ===
-                            proposal.id.toString(),
-                        ) !== -1
-
-                      return (
-                        <MenuItem
-                          key={v.transaction_hash}
-                          onClick={() => setSelectedStakeId(i)}
-                          disabled={alreadyVoted}
-                          isDisabled={alreadyVoted}
-                        >
-                          <Flex justify="space-between" align="center" w="full">
-                            {getStakedAmount(v.funds)} {GOV_TOKEN_SYMBOL}{" "}
-                            {alreadyVoted && " (already voted)"}{" "}
-                            {selectedStakeId === i && <CheckIcon />}
-                          </Flex>
-                        </MenuItem>
-                      )
-                    })}
-                    <Divider my="2px" />
-                    <MenuItem
+            ) : maxVotingPower === 0 ? (
+              <Alert status="info" borderRadius="md">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle>No voting power available!</AlertTitle>
+                  <AlertDescription>
+                    You need to stake some {GOV_TOKEN_SYMBOL} tokens to vote on
+                    proposals.{" "}
+                    <Button
+                      variant="link"
+                      colorScheme="blue"
                       onClick={() => {
                         window.location.pathname = "/stake"
                       }}
+                      size="sm"
                     >
-                      <Flex
-                        justify="space-between"
-                        align="center"
-                        w="full"
-                        opacity={0.8}
-                      >
-                        Stake more <PlusSquareIcon />
-                      </Flex>
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
+                      Start staking here
+                    </Button>
+                  </AlertDescription>
+                </Box>
+              </Alert>
+            ) : (
+              <>
+                {/* Voting Power Slider */}
+                <Box mb={6}>
+                  <Text mb={3} fontSize="sm" fontWeight="medium">
+                    Select Voting Power: {selectedVotingPower.toFixed(2)}{" "}
+                    {GOV_TOKEN_SYMBOL}
+                  </Text>
+                  <Slider
+                    value={selectedVotingPower}
+                    min={0}
+                    max={maxVotingPower}
+                    step={0.01}
+                    onChange={(value) => setSelectedVotingPower(value)}
+                    isDisabled={isStakingLoading || isStakingUninitialized}
+                  >
+                    <SliderMark value={0} mt="1" ml="-2.5" fontSize="sm">
+                      0
+                    </SliderMark>
+                    <SliderMark
+                      value={maxVotingPower}
+                      mt="1"
+                      ml="-2.5"
+                      fontSize="sm"
+                    >
+                      {maxVotingPower.toFixed(1)}
+                    </SliderMark>
+                    <SliderTrack>
+                      <SliderFilledTrack />
+                    </SliderTrack>
+                    <SliderThumb />
+                  </Slider>
+                  <Text mt={2} fontSize="xs" color="gray.500">
+                    Available from best position: {maxVotingPower.toFixed(2)}{" "}
+                    {GOV_TOKEN_SYMBOL}
+                  </Text>
+                </Box>
 
                 <Button
                   onClick={handleOnClick}
@@ -418,8 +432,10 @@ const ProposalDetail: React.FC<{ proposal?: Proposal }> = ({ proposal }) => {
                     selection === "" ||
                     isStakingUninitialized ||
                     isStakingLoading ||
-                    selectedStakeId == null
+                    selectedVotingPower === 0 ||
+                    !bestPosition
                   }
+                  isLoading={isStakingLoading}
                   _hover={{
                     bg: selection === "0" ? "red" : "green", // Keep the same color on hover
                   }}

@@ -2,8 +2,13 @@ import {
   Value,
   ScriptHash,
   AssetName,
+  BigNum,
 } from "@emurgo/cardano-serialization-lib-browser"
-import { GOV_TOKEN_POLICY_ID, GOV_TOKEN_NAME_HEX } from "./config.ts"
+import {
+  GOV_TOKEN_POLICY_ID,
+  GOV_TOKEN_NAME_HEX,
+  VAULT_FT_TOKEN_POLICY_ID,
+} from "./config.ts"
 import { fromHex } from "./utils/utils.ts"
 
 import { toast } from "../components/ToastContainer.ts"
@@ -11,7 +16,7 @@ import { toast } from "../components/ToastContainer.ts"
 export function wrongNetworkToast() {
   toast({
     title: "Wrong Network",
-    description: "Please switch to the Cardano Preprod network",
+    description: "Please switch to the Cardano Mainnet network",
     status: "error" as "error",
     duration: 5000,
     isClosable: false,
@@ -26,7 +31,8 @@ export async function setWallet(connectorName: string | undefined) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WALLET_CONNECTOR = await (window as any).cardano[connectorName].enable()
     const networkId = await WALLET_CONNECTOR.getNetworkId()
-    if (networkId === 1) {
+    console.log("Network ID", networkId)
+    if (networkId != 1) {
       wrongNetworkToast()
       return
     }
@@ -43,7 +49,9 @@ export async function restoreWallet() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WALLET_CONNECTOR = await (window as any).cardano[connectorName].enable()
     const networkId = await WALLET_CONNECTOR.getNetworkId()
-    if (networkId === 1) {
+    console.log("Network ID", networkId)
+
+    if (networkId != 1) {
       wrongNetworkToast()
       return false
     }
@@ -67,6 +75,80 @@ const BALANCE_CACHE: {
     time: number
   }
 } = {}
+
+let VAULT_FT_CACHE: {
+  time: number
+  balances: { [key: string]: string }
+} = {
+  time: 0,
+  balances: {},
+}
+
+// TODO refactor these utility functions
+export function unsignedIntFromTokenname(tokenNameHex: string) {
+  let result = 0
+  for (let i = 0; i < tokenNameHex.length; i += 2) {
+    const byte = parseInt(tokenNameHex.slice(i, i + 2), 16)
+    result = result * 256 + byte
+  }
+
+  return result
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+}
+
+export async function getVaultFTs() {
+  if (Date.now() < VAULT_FT_CACHE.time + CACHE_TIMEOUT) {
+    return VAULT_FT_CACHE.balances
+  }
+
+  const wallet = await getWallet()
+  const balances = await wallet?.getBalance()
+
+  if (!balances) return {}
+
+  const values = Value.from_hex(balances)
+  const scriptHashPolicyId = ScriptHash.from_hex(VAULT_FT_TOKEN_POLICY_ID)
+
+  const vaultFungibleTokens = values.multiasset()?.get(scriptHashPolicyId)
+
+  if (!vaultFungibleTokens) return {}
+
+  let result: { [key: string]: string } = {}
+
+  const assetNames = vaultFungibleTokens.keys()
+  const currentUNIXTimeMS = Date.now()
+  for (let i = 0; i < assetNames.len(); i++) {
+    const assetName = assetNames.get(i)
+    const nameBytes: Uint8Array = assetName.name() // usually returns a Uint8Array
+    const assetNameHex = bytesToHex(nameBytes)
+
+    if (unsignedIntFromTokenname(assetNameHex) <= currentUNIXTimeMS) {
+      continue // Skip tokens that cannot be used for staking. These should be burned by the user.
+    }
+    const amount = vaultFungibleTokens.get(assetName)?.to_str() ?? "0"
+    if (amount === "0") continue
+    result[assetNameHex] = amount
+  }
+
+  VAULT_FT_CACHE.time = Date.now()
+  VAULT_FT_CACHE.balances = result
+
+  return result
+}
+
+export async function getVaultFTTotalBalance() {
+  const balances = await getVaultFTs()
+  let total = BigNum.from_str("0")
+  for (const key in balances) {
+    total = total.checked_add(BigNum.from_str(balances[key]))
+  }
+  return total.to_str()
+}
 
 export async function getTokenBalance(
   tokenPolicyId: string,

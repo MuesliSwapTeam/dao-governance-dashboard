@@ -7,9 +7,11 @@ import {
   createOutputInlineDatum,
   unixTimeToSlot,
   selectInputUtxos,
+  buildCollateralInputs,
 } from "../utils/utils.ts"
 
 import { FundPayoutArgs, Vote } from "../../api/model/tally"
+import { treasuryApi } from "../../api/treasuryApi.ts"
 
 import {
   BaseAddress,
@@ -26,7 +28,6 @@ import {
   BigNum,
   ExUnits,
   Costmdls,
-  TxInputsBuilder,
   PlutusData,
   MintWitness,
   Language,
@@ -55,8 +56,10 @@ import {
   TALLY_AUTH_NFT_REF_INDEX,
   TALLY_AUTH_NFT_SCRIPT_HASH,
   TALLY_AUTH_NFT_REF_TRANSACTION_HASH,
+  TALLY_AUTH_NFT_REF_SCRIPT_SIZE,
   VAULT_FT_TOKEN_POLICY_ID,
-  GOV_STATE_REF_TRNSACTION_HASH,
+  GOV_STATE_REF_TRANSACTION_HASH,
+  GOV_STATE_SCRIPT_SIZE,
   GOV_STATE_REF_INDEX,
   TALLY_ADDR,
   TALLY_SCRIPT_HASH,
@@ -65,7 +68,6 @@ import {
 import { AuthRedeemer, CreateNewTally } from "../types/redeemer.ts"
 import { toast } from "../../components/ToastContainer.ts"
 import {
-  FundPayoutParams,
   GovStateDatum,
   GovStateParams,
   ProposalList,
@@ -80,8 +82,8 @@ import {
   FractionBaseType,
   Nothing,
   TokenBaseType,
-  TxOut,
 } from "../types/basic.ts"
+import { store } from "../../store.ts"
 
 function buildCreateNewTallyRedeemer(
   govStateInputIndex: string,
@@ -237,58 +239,42 @@ function buildAuthRedeemer(spent_utxo_index: string) {
   return redeemer
 }
 
-function buildProposalList(proposals: Vote[]) {
+async function buildProposalList(proposals: Vote[]) {
   const proposalList: PlutusData[] = []
 
-  // go through each proposal and built correct data type
-  for (let i = 0; i < proposals.length; i++) {
-    const proposal = proposals[i]
-
-    if (proposal.type === "Reject") proposalList.push(Nothing())
-    if (proposal.type === "Opinion")
+  for (const proposal of proposals) {
+    if (proposal.type === "Reject") {
+      proposalList.push(Nothing())
+    } else if (proposal.type === "Opinion") {
       proposalList.push(OpinionDatum(proposal.title))
+    } else if (proposal.type === "FundPayout") {
+      const { address, assets } = proposal.args as FundPayoutArgs
+      const value = assets.map(({ unit, quantity }) => ({ [unit]: quantity }))
+      const request = { address, value }
 
-    if (proposal.type === "FundPayout") {
-      const address = Address.from_bech32(
-        (proposal.args as FundPayoutArgs).address,
-      )
-      const pubKeyHash = BaseAddress.from_address(address)
-        ?.payment_cred()
-        .to_keyhash()
-        ?.to_hex()
+      console.log("Request:", request)
 
-      const stakeKeyHash = BaseAddress.from_address(address)
-        ?.stake_cred()
-        .to_keyhash()
-        ?.to_hex()
+      try {
+        const data = await store
+          .dispatch(
+            treasuryApi.endpoints.getTreasuryPayoutDatum.initiate(request),
+          )
+          .unwrap()
 
-      const treasuryBenefactor: AddressBaseType = {
-        isScript: false,
-        pubKeyHash: pubKeyHash ?? "",
-        stakeKeyHash: stakeKeyHash,
+        console.log("Funds:", data)
+        proposalList.push(PlutusData.from_hex(data))
+      } catch (err) {
+        console.error("Failed to load funds", err)
+        toast({
+          title: "Error",
+          description: `Failed to fetch treasury payout datum`,
+          status: "error",
+          duration: 9000,
+          isClosable: true,
+        })
       }
-
-      const outputTx = TxOut(
-        treasuryBenefactor,
-        assetsToValue((proposal.args as FundPayoutArgs).assets),
-      )
-
-      console.log("txOut", outputTx.to_hex())
-
-      proposalList.push(FundPayoutParams(outputTx))
     }
   }
-
-  /*const outputTx = TxOut(treasuryBenefactor, assetsToValue(value))
-  const treasuryPayout = FundPayoutParams(outputTx)
-
-  proposalList.push(treasuryPayout)
-  
-  const licenseRelease = LicenseReleaseParams(treasuryBenefactor, "1000000000");
-  proposalList.push(licenseRelease);*/
-
-  //const textBytes = PlutusData.new_bytes(Buffer.from("Hello this is Christoffer!", 'utf8'));
-  //proposalList.push(textBytes);
 
   return ProposalList(proposalList)
 }
@@ -333,9 +319,8 @@ async function createTally(
   const walletAddress = BaseAddress.from_address(
     Address.from_hex(await getWalletAddress()),
   )
-
   // we need to already perform the input utxo selection to determine the index of the scriptUtxo in the redeemer (as input utxos are lexiographically ordered in transactions)
-  const utxos = await selectInputUtxos(wallet, 8e6)
+  const utxos = await selectInputUtxos(wallet, 10e6)
   if (!utxos) return
 
   for (let i = 0; i < utxos.len(); i++) {
@@ -384,11 +369,11 @@ async function createTally(
   const govScriptSource = PlutusScriptSource.new_ref_input(
     ScriptHash.from_hex(GOV_STATE_SCRIPT_HASH),
     TransactionInput.new(
-      TransactionHash.from_bytes(fromHex(GOV_STATE_REF_TRNSACTION_HASH)),
+      TransactionHash.from_bytes(fromHex(GOV_STATE_REF_TRANSACTION_HASH)),
       GOV_STATE_REF_INDEX,
     ),
     Language.new_plutus_v2(),
-    7691,
+    GOV_STATE_SCRIPT_SIZE,
   )
 
   const redeemer = buildCreateNewTallyRedeemer(
@@ -409,31 +394,6 @@ async function createTally(
     govStateUtxo.input(),
     govStateUtxo.output().amount(),
   )
-
-  const walletCollateral = await wallet.experimental.getCollateral()
-  const collateralUtxo = walletCollateral
-    ?.map((utxo: string) => TransactionUnspentOutput.from_bytes(fromHex(utxo)))
-    ?.at(0)
-
-  if (!collateralUtxo) {
-    toast({
-      title: "Cancel Request Error",
-      description: `Collateral not found. Please set your collateral to continue`,
-      status: "error",
-      duration: 5000,
-      isClosable: true,
-    })
-    return Promise.reject(`An error occurred: \nCollateral not set`)
-  }
-
-  const txInputsBuilder = TxInputsBuilder.new()
-  txInputsBuilder.add_regular_input(
-    collateralUtxo.output().address(),
-    collateralUtxo.input(),
-    collateralUtxo.output().amount(),
-  )
-
-  txBuilder.set_collateral(txInputsBuilder)
 
   const minWinningThresholdSplit = minWinningThreshold.split("/")
   const minWinningThresholdNumerator = minWinningThresholdSplit[0]
@@ -462,7 +422,7 @@ async function createTally(
       TALLY_AUTH_NFT_REF_INDEX,
     ),
     Language.new_plutus_v2(),
-    913,
+    TALLY_AUTH_NFT_REF_SCRIPT_SIZE,
   )
 
   const mintWitness = MintWitness.new_plutus_script(
@@ -485,7 +445,7 @@ async function createTally(
     { unit: TALLY_AUTH_NFT_POLICY_ID + TALLY_AUTH_NFT_NAME_HEX, quantity: 1 },
   ]
 
-  const proposalData = buildProposalList(proposals)
+  const proposalData = await buildProposalList(proposals)
 
   const tallyOutput = createOutputInlineDatum(
     tallyAddress,
@@ -518,6 +478,14 @@ async function createTally(
   const auxData = createAuxiliaryData(metadataProposals)
   txBuilder.set_auxiliary_data(auxData)
 
+  console.log("auxData", auxData)
+
+  const collateralInputs = await buildCollateralInputs(
+    wallet,
+    "Cancel Request Error",
+  )
+  txBuilder.set_collateral(collateralInputs)
+
   txBuilder.add_change_if_needed(
     walletAddress?.to_address() ??
       Address.from_bech32(
@@ -525,7 +493,18 @@ async function createTally(
       ),
   )
 
-  const unsignedTransaction = txBuilder.build_tx()
+  console.log("walletAddress", walletAddress?.to_address())
+
+  console.log("set collateral")
+  let unsignedTransaction
+  try {
+    unsignedTransaction = txBuilder.build_tx()
+  } catch (error) {
+    console.error("Failed to build transaction", error)
+    throw error
+  }
+
+  console.log("unsignedTransaction", unsignedTransaction.to_hex())
 
   let txVkeyWitnesses, signError
   try {
@@ -555,6 +534,10 @@ async function createTally(
     witnessSet,
     unsignedTransaction.auxiliary_data(),
   )
+
+  console.log("signedTx", signedTx.to_hex())
+
+  console.log("Signed Transaction:", signedTx.to_hex())
 
   try {
     const txHash = await wallet.submitTx(signedTx.to_hex())

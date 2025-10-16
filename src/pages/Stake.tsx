@@ -15,31 +15,155 @@ import LockTokensModal from "../components/Staking/LockTokensModal"
 import UnlockTokensModal from "../components/Staking/UnlockTokensModal"
 import StakingTable from "../components/Staking/StakingTable"
 
-import { getGovernanceTokenBalance, getWalletAddress } from "../cardano/wallet"
+import {
+  getGovernanceTokenBalance,
+  getWalletAddress,
+  getVaultFTTotalBalance,
+} from "../cardano/wallet"
 import { formatNumber, fromNativeAmount } from "../utils/numericHelpers"
 import {
   GOV_TOKEN_DECIMALS,
   GOV_TOKEN_NAME_HEX,
   GOV_TOKEN_POLICY_ID,
   GOV_TOKEN_SYMBOL,
+  VAULT_FT_TOKEN_POLICY_ID,
+  VAULT_FT_TOKEN_SYMBOL,
 } from "../cardano/config"
 import { Asset } from "../api/model/common"
 import { skipToken } from "@reduxjs/toolkit/query/react"
 import useWalletContext from "../context/wallet"
 import { StakingPosition } from "../api/model/staking"
 import { useGetStakingPositionsQuery } from "../api/stakingApi"
+import { unsignedIntFromTokenname } from "../cardano/wallet"
 
 export const getStakedAmount = (funds: Asset[]) => {
-  funds = funds.filter(
+  let gov_token_funds = funds.filter(
     (x) =>
       x.policy_id === GOV_TOKEN_POLICY_ID &&
       x.asset_name === GOV_TOKEN_NAME_HEX,
   )
-  if (funds.length === 0) return "0"
-  return formatNumber(
-    fromNativeAmount(funds[0].amount, GOV_TOKEN_DECIMALS),
+
+  let vault_ft_funds = funds.filter(
+    (x) => x.policy_id === VAULT_FT_TOKEN_POLICY_ID,
+  )
+
+  let vaultFTAmounts: string[] = []
+  const currentUnixTimeMS = Date.now()
+  // TODO should we add a day to this threshold to reflect the stake that can
+  // actually participate in votes?
+  for (const ft of vault_ft_funds) {
+    if (unsignedIntFromTokenname(ft.asset_name) > currentUnixTimeMS) {
+      vaultFTAmounts.push(ft.amount)
+    }
+  }
+
+  const vaultFTTotalAmount = vaultFTAmounts.reduce(
+    (a, b) => BigInt(a) + BigInt(b),
+    BigInt(0),
+  )
+  const vaultFTAmount = formatNumber(
+    fromNativeAmount(vaultFTTotalAmount.toString(), GOV_TOKEN_DECIMALS),
     GOV_TOKEN_DECIMALS,
   )
+
+  // if (funds.length === 0) return "0"
+
+  let stakedGovAmount =
+    gov_token_funds.length > 0
+      ? formatNumber(
+          fromNativeAmount(gov_token_funds[0].amount, GOV_TOKEN_DECIMALS),
+          GOV_TOKEN_DECIMALS,
+        )
+      : "0"
+
+  let retString =
+    BigInt(vaultFTAmount) > 0
+      ? `${stakedGovAmount} ${GOV_TOKEN_SYMBOL} + ${vaultFTAmount} Vault FT`
+      : `${stakedGovAmount} ${GOV_TOKEN_SYMBOL}`
+  return retString
+}
+
+// Calculate voting power for a single staking position filtering FT tokens by proposal end date
+export const getVotingPowerForPosition = (
+  funds: Asset[],
+  proposalEndDate: number | null | undefined,
+): number => {
+  let gov_token_funds = funds.filter(
+    (x) =>
+      x.policy_id === GOV_TOKEN_POLICY_ID &&
+      x.asset_name === GOV_TOKEN_NAME_HEX,
+  )
+
+  let vault_ft_funds = funds.filter(
+    (x) => x.policy_id === VAULT_FT_TOKEN_POLICY_ID,
+  )
+
+  let vaultFTAmounts: string[] = []
+  // Filter FT tokens by proposal end date instead of current time
+  // Vault FTs cannot vote in proposals with no end date due to onchain limitations
+  if (proposalEndDate) {
+    for (const ft of vault_ft_funds) {
+      if (unsignedIntFromTokenname(ft.asset_name) > proposalEndDate) {
+        vaultFTAmounts.push(ft.amount)
+      }
+    }
+  }
+
+  const vaultFTTotalAmount = vaultFTAmounts.reduce(
+    (a, b) => BigInt(a) + BigInt(b),
+    BigInt(0),
+  )
+  const vaultFTVotingPower = Number(
+    fromNativeAmount(vaultFTTotalAmount.toString(), GOV_TOKEN_DECIMALS),
+  )
+
+  const milkVotingPower =
+    gov_token_funds.length > 0
+      ? Number(fromNativeAmount(gov_token_funds[0].amount, GOV_TOKEN_DECIMALS))
+      : 0
+
+  return milkVotingPower + vaultFTVotingPower
+}
+
+// Find the best available staking position (highest voting power)
+export const getBestAvailableStakingPosition = (
+  stakingPositions: StakingPosition[],
+  proposalId: string,
+  proposalEndDate: number | null | undefined,
+): { position: StakingPosition; votingPower: number; index: number } | null => {
+  const availablePositions: {
+    position: StakingPosition
+    votingPower: number
+    index: number
+  }[] = []
+
+  for (let i = 0; i < stakingPositions.length; i++) {
+    const position = stakingPositions[i]
+    // Check if this position is available (not already used for this proposal)
+    const hasParticipation = position.participations.some(
+      (x) => x.proposal_id.toString() === proposalId.toString(),
+    )
+    const hasDelegatedAction = position.delegated_actions.some(
+      (x) => x.participation.proposal_id.toString() === proposalId.toString(),
+    )
+
+    if (!hasParticipation && !hasDelegatedAction) {
+      const votingPower = getVotingPowerForPosition(
+        position.funds,
+        proposalEndDate,
+      )
+      if (votingPower > 0) {
+        availablePositions.push({ position, votingPower, index: i })
+      }
+    }
+  }
+
+  // Return the position with the highest voting power, or null if none available
+  return availablePositions.length > 0
+    ? availablePositions.reduce((best, current) =>
+        current.votingPower > best.votingPower ? current : best,
+      )
+    : null
 }
 
 const displayLockDate = (
@@ -63,22 +187,29 @@ const displayLockDate = (
 const Stake: FC = () => {
   const { isConnected } = useWalletContext()
   const [walletAddressHex, setWalletAddressHex] = useState<string | null>(null)
-  const [selectedStakePosition, setSelectedStakePosition] =
+  const [selectedUnlockStakePosition, setSelectedUnlockStakePosition] =
+    useState<StakingPosition | null>(null)
+  const [selectedLockStakePosition, setSelectedLockStakePosition] =
     useState<StakingPosition | null>(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [expandedPositionIndex, setExpandedPositionIndex] = useState<
     number | null
   >(null)
   const [balance, setBalance] = useState(0)
+  const [ftBalance, setFtBalance] = useState(0)
 
   // Effects
   useEffect(() => {
     if (!isConnected) return
 
-    const updateBalance = () => {
-      getGovernanceTokenBalance().then((b) => {
-        setBalance(fromNativeAmount(b, GOV_TOKEN_DECIMALS).toNumber())
-      })
+    const updateBalance = async () => {
+      const govBalance = await getGovernanceTokenBalance()
+      setBalance(fromNativeAmount(govBalance, GOV_TOKEN_DECIMALS).toNumber())
+
+      const vaultFTBalance = await getVaultFTTotalBalance()
+      setFtBalance(
+        fromNativeAmount(vaultFTBalance, GOV_TOKEN_DECIMALS).toNumber(),
+      )
     }
 
     updateBalance()
@@ -113,11 +244,19 @@ const Stake: FC = () => {
 
   // Handlers
   const handleUnlockClick = (position: StakingPosition) => {
-    setSelectedStakePosition(position)
+    setSelectedUnlockStakePosition(position)
   }
 
   const handleCloseUnlockModal = () => {
-    setSelectedStakePosition(null)
+    setSelectedUnlockStakePosition(null)
+  }
+
+  const handleStakeClick = (position: StakingPosition) => {
+    setSelectedLockStakePosition(position)
+  }
+
+  const handleCloseLockModal = () => {
+    setSelectedLockStakePosition(null)
   }
 
   // Styles
@@ -152,22 +291,32 @@ const Stake: FC = () => {
               <Text fontSize="md">
                 <b>{GOV_TOKEN_SYMBOL} Balance:</b> {balance}
               </Text>
-              <Button
-                width="100%"
-                onClick={onOpen}
-                isDisabled={balance <= 0}
-                mt={2}
-                bg={balance <= 0 ? disabledColor : undefined}
-                _disabled={{ cursor: "not-allowed" }}
-              >
-                Lock {GOV_TOKEN_SYMBOL}
-              </Button>
+              <Text fontSize="md">
+                <b>{VAULT_FT_TOKEN_SYMBOL} Balance:</b> {ftBalance}
+              </Text>
+              {stakingPositions.length == 0 && (
+                <Button
+                  width="100%"
+                  onClick={onOpen}
+                  isDisabled={balance <= 0}
+                  mt={2}
+                  bg={balance <= 0 ? disabledColor : undefined}
+                  _disabled={{ cursor: "not-allowed" }}
+                >
+                  Lock {GOV_TOKEN_SYMBOL}
+                </Button>
+              )}
             </Box>
           )}
         </Flex>
 
         {/* LockTokensModal */}
-        <LockTokensModal isOpen={isOpen} onClose={onClose} balance={balance} />
+        <LockTokensModal
+          isOpen={isOpen}
+          onClose={onClose}
+          balance={balance}
+          ftBalance={ftBalance}
+        />
 
         {/* Stake Positions Table */}
         {isLoading || (isUninitialized && isConnected) ? (
@@ -189,6 +338,7 @@ const Stake: FC = () => {
               expandedPositionIndex={expandedPositionIndex}
               setExpandedPositionIndex={setExpandedPositionIndex}
               handleUnlockClick={handleUnlockClick}
+              handleStakeClick={handleStakeClick}
               displayLockDate={displayLockDate}
               getStakedAmount={getStakedAmount}
             />
@@ -221,11 +371,22 @@ const Stake: FC = () => {
       </VStack>
 
       {/* UnlockTokensModal */}
-      {selectedStakePosition && (
+      {selectedUnlockStakePosition && (
         <UnlockTokensModal
-          isOpen={!!selectedStakePosition}
+          isOpen={!!selectedUnlockStakePosition}
           onClose={handleCloseUnlockModal}
-          position={selectedStakePosition}
+          position={selectedUnlockStakePosition}
+        />
+      )}
+
+      {/* LockTokensModal */}
+      {selectedLockStakePosition && (
+        <LockTokensModal
+          isOpen={!!selectedLockStakePosition}
+          onClose={handleCloseLockModal}
+          position={selectedLockStakePosition}
+          balance={balance}
+          ftBalance={ftBalance}
         />
       )}
     </Box>

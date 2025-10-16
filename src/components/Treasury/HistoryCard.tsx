@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react"
 import { TreasuryAsset } from "../../api/model/treasury"
 import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
+import { CARDANOSCAN_URL } from "../../constants"
 
 const HistoryCard = ({
   transactions,
@@ -103,7 +104,7 @@ const HistoryCard = ({
                   <Td>{transaction.date}</Td>
                   <Td>
                     <a
-                      href={`https://preprod.cardanoscan.io/transaction/${transaction.txHash}`}
+                      href={`${CARDANOSCAN_URL}/transaction/${transaction.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -114,7 +115,7 @@ const HistoryCard = ({
                   <Td>{transaction.reason}</Td>
                   <Td>
                     {transaction.type === "Withdrawal" &&
-                    transaction.daoDecision ? (
+                      transaction.daoDecision ? (
                       <a
                         href={transaction.daoDecision}
                         target="_blank"

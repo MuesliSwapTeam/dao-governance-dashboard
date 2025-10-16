@@ -14,10 +14,12 @@ import {
 import { Link as RouterLink } from "react-router-dom"
 import { ExternalLinkIcon } from "@chakra-ui/icons"
 import {
+  GOV_TOKEN_DECIMALS,
   TALLY_AUTH_NFT_NAME_HEX,
   TALLY_AUTH_NFT_POLICY_ID,
 } from "../../cardano/config"
 import { Participation, StakingPosition } from "../../api/model/staking"
+import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
 import RemoveVoteModal from "./RevokeVoteModal"
 
 interface ParticipationsTableProps {
@@ -42,7 +44,16 @@ const ParticipationsTable: FC<ParticipationsTableProps> = ({
     setSelectedParticipation(null)
   }
 
+  const formatWeight = (weight: string) => {
+    return formatNumber(
+      fromNativeAmount(weight, GOV_TOKEN_DECIMALS),
+      GOV_TOKEN_DECIMALS,
+    )
+  }
+
   const disabledColor = useColorModeValue("grays.300.dark", "grays.600.dark")
+
+  console.log(participations)
 
   return participations.length > 0 ? (
     <Table size="sm" variant="simple">
@@ -50,6 +61,7 @@ const ParticipationsTable: FC<ParticipationsTableProps> = ({
         <Tr>
           <Th>Proposal Title</Th>
           <Th>Your Vote</Th>
+          <Th>Vote Weight</Th>
           <Th>End Date</Th>
           <Th>Action</Th>
         </Tr>
@@ -58,7 +70,7 @@ const ParticipationsTable: FC<ParticipationsTableProps> = ({
         {participations.map((p, idx) => {
           const unlockDate = new Date(Number(p.end_time))
           const now = new Date()
-          const isVoteActive = unlockDate > now
+          const isVoteActive = p.end_time ? unlockDate > now : true
 
           return (
             <Tr key={idx}>
@@ -74,7 +86,10 @@ const ParticipationsTable: FC<ParticipationsTableProps> = ({
               <Td>
                 <i>{p.proposal_metadata?.title ?? p.proposal_index}</i>
               </Td>
-              <Td>{displayLockDate(unlockDate, true)}</Td>
+              <Td>{formatWeight(p.weight)}</Td>
+              <Td>
+                {p.end_time ? displayLockDate(unlockDate, true) : "No end date"}
+              </Td>
               <Td>
                 <Button
                   title={

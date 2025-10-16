@@ -5,6 +5,8 @@ import { tokensApi } from "./api/tokensApi"
 import { tallyApi } from "./api/tallyApi"
 import { treasuryApi } from "./api/treasuryApi"
 import { governanceApi } from "./api/governanceStateApi"
+import { vaultApi } from "./api/vaultApi"
+import constantsReducer from "./context/global/constantsSlice"
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
     [tallyApi.reducerPath]: tallyApi.reducer,
     [treasuryApi.reducerPath]: treasuryApi.reducer,
     [governanceApi.reducerPath]: governanceApi.reducer,
+    [vaultApi.reducerPath]: vaultApi.reducer,
+    constants: constantsReducer,
     // Add other reducers here if needed
   },
   // Adding the api middleware enables caching, invalidation, polling, and other features of RTK Query
@@ -24,6 +28,7 @@ export const store = configureStore({
       tallyApi.middleware,
       treasuryApi.middleware,
       governanceApi.middleware,
+      vaultApi.middleware,
     ]),
 })
 

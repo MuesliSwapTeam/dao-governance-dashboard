@@ -1,85 +1,170 @@
-// GOVERNANCE TOKEN DETAILS
-export const GOV_TOKEN_DECIMALS = 6
-export const GOV_TOKEN_POLICY_ID =
-  "bd976e131cfc3956b806967b06530e48c20ed5498b46a5eb836b61c2"
-export const GOV_TOKEN_NAME_HEX = "744d494c4b7632"
-export const GOV_TOKEN_SYMBOL = "MILK"
+// constants.ts
+import { store } from "../store"
 
-export const GOV_SUBJECT = GOV_TOKEN_POLICY_ID + GOV_TOKEN_NAME_HEX
+// ===============
+// GOV TOKEN DETAILS
+// ===============
+export let GOV_TOKEN_DECIMALS: number
+export let GOV_TOKEN_POLICY_ID: string
+export let GOV_TOKEN_NAME_HEX: string
+export let GOV_TOKEN_SYMBOL: string
+export let GOV_SUBJECT: string
 
+// ===============
 // VAULT FT TOKENS DETAILS
-export const VAULT_FT_TOKEN_DECIMALS = 6
-export const VAULT_FT_TOKEN_POLICY_ID =
-  // "14ffa2c03929b1da365ee843a83672783033fad65469ddc573126bc6"
-  "7a314ae09578084383db73c83c89f07abc9aa25654dcb9f3b364d44d"
+// ===============
+export let VAULT_FT_TOKEN_DECIMALS: number
+export let VAULT_FT_TOKEN_POLICY_ID: string
+export let VAULT_FT_TOKEN_NAME_HEX: string
+export let VAULT_FT_TOKEN_SYMBOL: string
 
-export const VAULT_FT_TOKEN_SYMBOL = "sMILK"
-
+// ===============
 // GOV STATE NFT TOKEN DETAILS
-export const GOV_STATE_NFT_POLICY_ID =
-"3b26a37b0921108c74a33fdc6cb47b7e64a010215313d900d811ae17"
-  // "c25817a9b926ef4acdae8545103ccf0707086bb93fc7fb9c3500a495"
-export const GOV_STATE_NFT_TOKEN_NAME_HEX =
-"3e82645b26e42ed75c28b05482e0867d3bf9795b4d541e0d07e80847bae777ff"
-  // "77813d879ac66733ef75d28d8e312d0d0defddc6d356fd43475b6093f7fa86f1"
-// "6a21c4ed1df85eaa797edaa2a26f79724c7839c9642072fb16d9181ea450f0f5"
+// ===============
+export let GOV_STATE_NFT_POLICY_ID: string
+export let GOV_STATE_NFT_TOKEN_NAME_HEX: string
 
+// ===============
 // TALLY AUTH NFT TOKEN DETAILS
-export const TALLY_AUTH_NFT_POLICY_ID =
-  // "fd35a15ff560ac17124163c9aaa9e3d6e54efcbfce5749e817a6f579"
-  "d13afa6d4e76063ecc9f81c2debe2e14e9eee04203a75e8955983565"
-export const TALLY_AUTH_NFT_NAME_HEX =
-"3e82645b26e42ed75c28b05482e0867d3bf9795b4d541e0d07e80847bae777ff"
-  // "77813d879ac66733ef75d28d8e312d0d0defddc6d356fd43475b6093f7fa86f1"
-//"6a21c4ed1df85eaa797edaa2a26f79724c7839c9642072fb16d9181ea450f0f5"
+// ===============
+export let TALLY_AUTH_NFT_POLICY_ID: string
+export let TALLY_AUTH_NFT_NAME_HEX: string
 
+// ===============
 // TALLY AUTH SCRIPT REF
-export const TALLY_AUTH_NFT_SCRIPT_HASH =
-  // "fd35a15ff560ac17124163c9aaa9e3d6e54efcbfce5749e817a6f579"
-  "d13afa6d4e76063ecc9f81c2debe2e14e9eee04203a75e8955983565"
-export const TALLY_AUTH_NFT_REF_TRANSACTION_HASH =
-  // "6a1b1ce3441fabc2ec5da8cd4240fd96bd09c3f0f055c4941443e95c706e193b"
-  "caa6f44824c1ac4d0e0a6582310bf6a21e7c4bf31e7af83d58f3baa4c1bf2576"
-export const TALLY_AUTH_NFT_REF_INDEX = 0
+// ===============
+export let TALLY_AUTH_NFT_SCRIPT_HASH: string
+export let TALLY_AUTH_NFT_REF_TRANSACTION_HASH: string
+export let TALLY_AUTH_NFT_REF_INDEX: number
+export let TALLY_AUTH_NFT_REF_SCRIPT_SIZE: number
 
+// ===============
 // STAKING SCRIPT DATA
-export const STAKING_ADDR =
-  // "addr_test1wpklu6cz9y0d0f3u9e4travkzvzfsl8gv8ay8dpwmd6pr9st4nwpn"
-  "addr_test1wr28c64n8rz4n507hltqxqxksunujk4fvry66u03u3lcjlgrm037a"
-export const STAKING_SCRIPT_HASH =
-  // "6dfe6b02291ed7a63c2e6ab1f5961304987ce861fa43b42edb741196"
-  "d47c6ab338c559d1febfd60300d68727c95aa960c9ad71f1e47f897d"
+// ===============
+export let STAKING_ADDR: string
+export let STAKING_SCRIPT_HASH: string
+export let STAKING_REF_TRANSACTION_HASH: string
+export let STAKING_REF_INDEX: number
+export let STAKING_REF_SCRIPT_SIZE: number
 
+// ===============
 // TALLY SCRIPT DATA
-export const TALLY_ADDR =
-  // "addr_test1wq83n33mrw200szwy26dpvcycfu8gr05ajyk0h7znncsvfcj530zc"
-  "addr_test1wr3kyj5dghwxfvvvq67dqwcr8j56myva77hlns75g63e29cp76j9u"
-export const TALLY_SCRIPT_HASH =
-  // "0f19c63b1b94f7c04e22b4d0b304c278740df4ec8967dfc29cf10627"
-  "e3624a8d45dc64b18c06bcd03b033ca9ad919df7aff9c3d446a39517"
+// ===============
+export let TALLY_ADDR: string
+export let TALLY_SCRIPT_HASH: string
 
+// ===============
 // VOTE PERMISSION NFT SCRIPT
-export const VOTE_PERMISSION_NFT_SCRIPT_HASH =
-  // "44193e1027d853222c151464f9029edfdb023186b84769fdfdfc5bb7"
-  "ba9f3cc878f2f4ca4aff86af7182542db8808706b7c3cc0805bb594d"
+// ===============
+export let VOTE_PERMISSION_NFT_SCRIPT_HASH: string
+export let VOTE_PERMISSION_NFT_REF_TRANSACTION_HASH: string
+export let VOTE_PERMISSION_NFT_REF_INDEX: number
+export let VOTE_PERMISSION_NFT_REF_SCRIPT_SIZE: number
 
+// ===============
 // GOV STATE DATA
-export const GOV_STATE_ADDR =
-  // "addr_test1wpmnw8ngvvyezngv8ha56m6ryny5s0nfcuvqkwld0gq6j3gupffjr"
-  "addr_test1wrt86np5tzt9ddd5gnwrhjd5xtcz4yflmw4nahee6exeydght7q3a"
+// ===============
+export let GOV_STATE_ADDR: string
 
+// ===============
 // GOV STATE SCRIPT REF
-export const GOV_STATE_SCRIPT_HASH =
-  // "77371e686309914d0c3dfb4d6f4324c9483e69c7180b3bed7a01a945"
-  "d67d4c34589656b5b444dc3bc9b432f02a913fdbab3edf39d64d9235"
-export const GOV_STATE_REF_TRNSACTION_HASH =
-  // "2c5e5d204890c15c42b1f7deed5fdc3e04fddabc7f10a4562ffa62f5426375b4"
-  "e9c89da717a93b84effd4109dabcaff0eb7de02c182567b886f0d381faf03a26"
-export const GOV_STATE_REF_INDEX = 0
+// ===============
+export let GOV_STATE_SCRIPT_HASH: string
+export let GOV_STATE_REF_TRANSACTION_HASH: string
+export let GOV_STATE_REF_INDEX: number
+export let GOV_STATE_SCRIPT_SIZE: number
 
-export const STAKING_VOTE_NFT_POLICY_ID =
-  // "53c3a80741bb330490f47591376227b52d91ccd067f303ac58d381cd"
-  "a8b11e36e20cb288b35e471006cccd772a37e318f7c27f73e606a102"
+// ===============
+// STAKING VOTE NFT POLICY
+// ===============
+export let STAKING_VOTE_NFT_POLICY_ID: string
+export let STAKING_VOTE_NFT_REF_TRANSACTION_HASH: string
+export let STAKING_VOTE_NFT_REF_INDEX: number
+export let STAKING_VOTE_NFT_REF_SCRIPT_SIZE: number
 
-// ENVIORNMENT VARIABLES
+// ===============
+// ENVIRONMENT
+// ===============
 export const DEBUG = true
+
+// ===============
+// INITIALIZER
+// ===============
+export function initConstants() {
+  const state = store.getState()
+
+  if (!state?.constants?.data) {
+    throw new Error("Governance state not loaded yet")
+  }
+
+  // GOV TOKEN
+  GOV_TOKEN_DECIMALS = state.constants.data.governance_token.decimals
+  GOV_TOKEN_POLICY_ID = state.constants.data.governance_token.policy_id
+  GOV_TOKEN_NAME_HEX = state.constants.data.governance_token.token_name
+  GOV_TOKEN_SYMBOL = state.constants.data.governance_token.symbol
+  GOV_SUBJECT = GOV_TOKEN_POLICY_ID + GOV_TOKEN_NAME_HEX
+
+  // VAULT FT
+  VAULT_FT_TOKEN_DECIMALS = state.constants.data.governance_token.decimals
+  VAULT_FT_TOKEN_POLICY_ID = state.constants.data.policy_ids.vault_ft
+  VAULT_FT_TOKEN_NAME_HEX = "dummy" // TODO this is actually not a constant
+  VAULT_FT_TOKEN_SYMBOL = "s" + GOV_TOKEN_SYMBOL
+
+  // GOV STATE NFT
+  GOV_STATE_NFT_POLICY_ID = state.constants.data.policy_ids.gov_state_nft
+  GOV_STATE_NFT_TOKEN_NAME_HEX = state.constants.data.nfts.gov_state_nft
+
+  // TALLY AUTH NFT
+  TALLY_AUTH_NFT_POLICY_ID = state.constants.data.policy_ids.tally_auth_nft
+  TALLY_AUTH_NFT_NAME_HEX = state.constants.data.nfts.gov_state_nft
+
+  // TALLY AUTH SCRIPT REF
+  TALLY_AUTH_NFT_SCRIPT_HASH = TALLY_AUTH_NFT_POLICY_ID
+  TALLY_AUTH_NFT_REF_TRANSACTION_HASH =
+    state.constants.data.reference_inputs.tally_auth_nft.tx_hash
+  TALLY_AUTH_NFT_REF_INDEX =
+    state.constants.data.reference_inputs.tally_auth_nft.index
+  TALLY_AUTH_NFT_REF_SCRIPT_SIZE =
+    state.constants.data.script_sizes.tally_auth_nft
+
+  // STAKING SCRIPT DATA
+  STAKING_ADDR = state.constants.data.addresses.staking
+  STAKING_SCRIPT_HASH = state.constants.data.policy_ids.staking
+  STAKING_REF_TRANSACTION_HASH =
+    state.constants.data.reference_inputs.staking.tx_hash
+  STAKING_REF_INDEX = state.constants.data.reference_inputs.staking.index
+  STAKING_REF_SCRIPT_SIZE = state.constants.data.script_sizes.staking
+
+  // TALLY SCRIPT DATA
+  TALLY_ADDR = state.constants.data.addresses.tally
+  TALLY_SCRIPT_HASH = state.constants.data.policy_ids.tally
+
+  // VOTE PERMISSION
+  VOTE_PERMISSION_NFT_SCRIPT_HASH =
+    state.constants.data.policy_ids.vote_permission_nft
+  VOTE_PERMISSION_NFT_REF_TRANSACTION_HASH =
+    state.constants.data.reference_inputs.vote_permission_nft.tx_hash
+  VOTE_PERMISSION_NFT_REF_INDEX =
+    state.constants.data.reference_inputs.vote_permission_nft.index
+  VOTE_PERMISSION_NFT_REF_SCRIPT_SIZE =
+    state.constants.data.script_sizes.vote_permission_nft
+
+  // GOV STATE DATA
+  GOV_STATE_ADDR = state.constants.data.addresses.gov_state
+
+  // GOV STATE SCRIPT REF
+  GOV_STATE_SCRIPT_HASH = state.constants.data.policy_ids.gov_state
+  GOV_STATE_REF_TRANSACTION_HASH =
+    state.constants.data.reference_inputs.gov_state.tx_hash
+  GOV_STATE_REF_INDEX = state.constants.data.reference_inputs.gov_state.index
+  GOV_STATE_SCRIPT_SIZE = state.constants.data.script_sizes.gov_state
+
+  // STAKING VOTE NFT
+  STAKING_VOTE_NFT_POLICY_ID = state.constants.data.policy_ids.staking_vote_nft
+  STAKING_VOTE_NFT_REF_TRANSACTION_HASH =
+    state.constants.data.reference_inputs.staking_vote_nft.tx_hash
+  STAKING_VOTE_NFT_REF_INDEX =
+    state.constants.data.reference_inputs.staking_vote_nft.index
+  STAKING_VOTE_NFT_REF_SCRIPT_SIZE =
+    state.constants.data.script_sizes.staking_vote_nft
+}

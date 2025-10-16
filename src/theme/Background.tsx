@@ -4,7 +4,8 @@ const Fonts = () => (
   <Global
     styles={css`
       body {
-        background-image: radial-gradient(
+        background-image:
+          radial-gradient(
             65vw 63vw at 96vw 222vw,
             rgba(77, 88, 243, 0.15),
             transparent 50%

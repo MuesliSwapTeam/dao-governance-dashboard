@@ -24,10 +24,12 @@ import {
   TransactionUnspentOutput,
   PlutusMapValues,
   hash_plutus_data,
+  TxInputsBuilder,
 } from "@emurgo/cardano-serialization-lib-browser"
 import Fraction from "fraction.js"
 import { sha256 } from "js-sha256"
 import { toast } from "../../components/ToastContainer"
+import { Asset } from "../../api/model/common"
 
 export function fromHex(hex: string) {
   return Buffer.from(hex, "hex")
@@ -39,10 +41,10 @@ export function toHex(bytes: Uint8Array) {
 
 async function blockfrostRequest(endpoint: string) {
   return await fetch(
-    "https://cardano-preprod.blockfrost.io/api/v0" + endpoint,
+    "https://cardano-mainnet.blockfrost.io/api/v0" + endpoint,
     {
       headers: {
-        project_id: "preprodjgdbXRrz6gH0hTST2Bx2C5bRqNKFq9ub",
+        project_id: "mainnetjgdbXRrz6gH0hTST2Bx2C5bRqNKFq9ub",
         "User-Agent": "muesliswap",
       },
       method: "GET",
@@ -328,6 +330,7 @@ export const SLOT_CONFIG_NETWORK: { [key: string]: SlotConfig } = {
   Preview: { zeroTime: 1666656000000, zeroSlot: 0, slotLength: 1000 }, // Starting at Shelley era
   Preprod: {
     zeroTime: 1654041600000 + 1728000000,
+    // zeroTime: 1654041600000,
     zeroSlot: 86400,
     slotLength: 1000,
   },
@@ -344,11 +347,27 @@ function unixTimeToEnclosingSlot(
 }
 
 export function unixTimeToSlot(unixTime: number): number {
-  return unixTimeToEnclosingSlot(unixTime, SLOT_CONFIG_NETWORK["Preprod"])
+  return unixTimeToEnclosingSlot(unixTime, SLOT_CONFIG_NETWORK["Mainnet"])
 }
 
+export const convertToValue = (funds: Asset[]) => {
+  const valueList: { unit: string; quantity: number }[] = []
+  for (let elm of funds) {
+    if (elm.policy_id === "") {
+      valueList.push({ unit: "lovelace", quantity: Number(elm.amount) })
+    } else {
+      valueList.push({
+        unit: elm.policy_id + elm.asset_name,
+        quantity: Number(elm.amount),
+      })
+    }
+  }
+
+  return valueList
+}
 // Function to convert Value to PlutusData
 export function valueToPlutusData(value: Value): PlutusData {
+  // TODO: Fix all these type casts below (as unknown as PlutusMapValues)
   // They are only there so I could get the build working
   const multiassetMap = PlutusMap.new()
 
@@ -435,4 +454,45 @@ export async function selectInputUtxos(wallet: any, minAdaRequired: number) {
   }
 
   return utxos
+}
+
+/**
+ * Creates collateral inputs for transaction building using the wallet's collateral UTXOs.
+ * Supports multiple UTXOs as per the latest Cardano standards.
+ *
+ * @param wallet - The wallet instance to get collateral from
+ * @param errorTitle - Title for error toast (defaults to "Collateral Error")
+ * @returns Promise<TxInputsBuilder> - Builder with collateral inputs added
+ * @throws Promise rejection if no collateral is available
+ */
+export async function buildCollateralInputs(
+  wallet: any,
+  errorTitle: string = "Collateral Error",
+): Promise<TxInputsBuilder> {
+  const walletCollateral = await wallet.getCollateral()
+  const collateralUtxos = walletCollateral?.map((utxo: string) =>
+    TransactionUnspentOutput.from_bytes(fromHex(utxo)),
+  )
+
+  if (!collateralUtxos || collateralUtxos.length === 0) {
+    toast({
+      title: errorTitle,
+      description: `Collateral not found. Please set your collateral to continue`,
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+    })
+    return Promise.reject(`An error occurred: \nCollateral not set`)
+  }
+
+  const txInputsBuilder = TxInputsBuilder.new()
+  collateralUtxos.forEach((collateralUtxo: TransactionUnspentOutput) => {
+    txInputsBuilder.add_regular_input(
+      collateralUtxo.output().address(),
+      collateralUtxo.input(),
+      collateralUtxo.output().amount(),
+    )
+  })
+
+  return txInputsBuilder
 }

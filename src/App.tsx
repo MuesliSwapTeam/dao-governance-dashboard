@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import { Provider } from "react-redux"
+import { useDispatch } from "react-redux"
+import { useEffect } from "react"
 import { Box } from "@chakra-ui/react"
 import { useBreakpointValue } from "@chakra-ui/react"
 
@@ -8,11 +9,14 @@ import NavBar from "./components/NavBar"
 
 import "./App.css"
 import WalletProvider from "./context/wallet/WalletProvider"
-import { store } from "./store"
+import { fetchConstants } from "./context/global/constantsSlice"
+import { initConstants } from "./cardano/config"
+import type { AppDispatch } from "./store"
 
 import HomePage from "./pages/HomePage"
 import TreasuryPage from "./pages/Treasury"
 import StakePage from "./pages/Stake"
+import VaultPage from "./pages/Vault"
 import ProposalsListPage from "./pages/ProposalListPage"
 import CreateProposalPage from "./pages/CreateProposal"
 import ProposalDetailPage from "./pages/ProposalDetailPage"
@@ -37,42 +41,49 @@ function App() {
     xl: true,
     "2xl": true,
   })
+
+  const dispatch = useDispatch<AppDispatch>()
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      await dispatch(fetchConstants())
+      initConstants()
+    }
+    loadConfig()
+  }, [dispatch])
+
   if (!isDesktop) {
     return <MobileNotSupportedPage />
   }
 
   return (
-    <Provider store={store}>
-      <WalletProvider>
-        <Router>
-          <NavBar />
-          <Box
-            as="main" // uses App.css style for main
-          >
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/matchmakers" element={<MatchmakerListPage />} />
-              <Route
-                path="/matchmakers/:authNft/:id"
-                element={<MatchmakerDetailPage />}
-              />
-              <Route path="/stake" element={<StakePage />} />
-              <Route path="/treasury" element={<TreasuryPage />} />
-              <Route path="/proposals" element={<ProposalsListPage />} />
-              <Route
-                path="/proposals/create"
-                element={<CreateProposalPage />}
-              />
-              <Route
-                path="/proposals/:authNft/:id"
-                element={<ProposalDetailPage />}
-              />
-            </Routes>
-          </Box>
-          {/*<Footer />*/}
-        </Router>
-      </WalletProvider>
-    </Provider>
+    <WalletProvider>
+      <Router>
+        <NavBar />
+        <Box
+          as="main" // uses App.css style for main
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/matchmakers" element={<MatchmakerListPage />} />
+            <Route
+              path="/matchmakers/:authNft/:id"
+              element={<MatchmakerDetailPage />}
+            />
+            <Route path="/stake" element={<StakePage />} />
+            <Route path="/vault" element={<VaultPage />} />
+            <Route path="/treasury" element={<TreasuryPage />} />
+            <Route path="/proposals" element={<ProposalsListPage />} />
+            <Route path="/proposals/create" element={<CreateProposalPage />} />
+            <Route
+              path="/proposals/:authNft/:id"
+              element={<ProposalDetailPage />}
+            />
+          </Routes>
+        </Box>
+        {/*<Footer />*/}
+      </Router>
+    </WalletProvider>
   )
 }
 

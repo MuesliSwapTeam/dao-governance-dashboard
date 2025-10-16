@@ -156,3 +156,11 @@ export function AuthRedeemer(
 
   return plutusData
 }
+
+/* STAKING VOTE NFT */
+export function StakingVoteNFTBurnRedeemer() {
+  const plutusData = PlutusData.new_constr_plutus_data(
+    ConstrPlutusData.new(BigNum.from_str("1"), PlutusList.new()),
+  )
+  return plutusData
+}

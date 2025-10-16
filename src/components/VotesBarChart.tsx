@@ -6,7 +6,7 @@ import {
   useColorModeValue,
   useMediaQuery,
 } from "@chakra-ui/react"
-import { formatNumber, fromNativeAmount } from "../utils/numericHelpers"
+import { formatNumber } from "../utils/numericHelpers"
 import { GOV_TOKEN_DECIMALS } from "../cardano/config"
 
 const VoteBar = (props: {
@@ -167,12 +167,8 @@ const VotesBarChart: React.FC<VotesBarChartProps> = ({
               position="absolute"
               left={`${Math.round(100 * quorumPosition)}%`} // Align with quorum line
             >
-              {formatNumber(
-                fromNativeAmount(totalWeight, GOV_TOKEN_DECIMALS),
-                0,
-              )}{" "}
-              / {formatNumber(fromNativeAmount(quorum, GOV_TOKEN_DECIMALS), 0)}{" "}
-              Votes{" "}
+              {formatNumber(totalWeight, GOV_TOKEN_DECIMALS)} /{" "}
+              {formatNumber(quorum, GOV_TOKEN_DECIMALS)} Votes{" "}
             </Text>
           )}
         </Flex>

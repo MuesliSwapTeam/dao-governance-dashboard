@@ -12,24 +12,59 @@ export const isLicenseReleaseProposal = (p: Proposal) => {
 }
 
 export const parseLicenseReleaseArgs = (proposal: Proposal) => {
-  const licenseArgs = proposal.votes[1].args as any // VoteArgsMap["LicenseArgs"]
-  // TODO : Properly transform binary to cbor
-  const address = licenseArgs.fields[0].fields[0].fields[0].bytes
-  const datum = licenseArgs.fields[1]
-  const maximumFutureValidity = licenseArgs.fields[2].int
+  console.log("proposal", proposal)
+  // Find the vote with type "LicenseRelease"
+  const licenseVote = proposal.votes.find(
+    (vote) => vote.type === "LicenseRelease",
+  )
 
-  const approveWeight = proposal.votes[1].weight
-  const revokeWeight = proposal.votes[0].weight
+  if (!licenseVote) {
+    throw new Error("No vote with type 'LicenseRelease' found")
+  }
+
+  // Try to extract address from vote args
+  let address = "TO BE ADDED"
+  let datum = null
+  let maximumFutureValidity = 0
+
+  try {
+    const licenseArgs = licenseVote.args as any
+    if (licenseArgs && licenseArgs.fields && licenseArgs.fields.length >= 3) {
+      // TODO: Properly transform binary to cbor
+      address =
+        licenseArgs.fields[0]?.fields?.[0]?.fields?.[0]?.bytes || "TO BE ADDED"
+      datum = licenseArgs.fields[1]
+      maximumFutureValidity = licenseArgs.fields[2]?.int || 0
+    } else if (licenseArgs && licenseArgs[0]) {
+      // Alternative structure
+      address = licenseArgs[0]?.fields?.[0]?.fields?.[0]?.bytes || "TO BE ADDED"
+      datum = licenseArgs[1]
+      maximumFutureValidity = licenseArgs[2]?.int || 0
+    }
+  } catch (error) {
+    console.warn("Could not parse license args, using defaults:", error)
+  }
+
+  const approveWeight = licenseVote.weight
+  const revokeWeight = proposal.votes[0]?.weight || 0 // Assuming the first vote is for revocation
   const proposalEndDate = +new Date(proposal.endDate)
   const licenseEndDate = Date.now() + maximumFutureValidity
   const endDate = Math.min(proposalEndDate, licenseEndDate)
 
+  // Get the ID of the "LicenseRelease" vote
+  const voteIndex = proposal.votes.findIndex(
+    (vote) => vote.type === "LicenseRelease",
+  )
+
   return {
-    address,
-    datum,
-    maximumFutureValidity,
-    approveWeight,
-    revokeWeight,
-    endDate,
+    licenseArgs: {
+      address,
+      datum,
+      maximumFutureValidity,
+      approveWeight,
+      revokeWeight,
+      endDate,
+    },
+    licenseReleaseVoteId: voteIndex,
   }
 }

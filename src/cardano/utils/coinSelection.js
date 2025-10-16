@@ -187,7 +187,7 @@ const BigInt = typeof window !== "undefined" && window.BigInt
 /**
  * @typedef {Object} SelectionResult - Coin Selection algorithm return
  * @property {UTxOList} input - Accumulated UTxO set.
- * @property {OutputList} output - Requested outputs.
+ * @property {OutputList|Value} output - Requested outputs or output value.
  * @property {UTxOList} remaining - Remaining UTxO set.
  * @property {Value} amount - UTxO amount of each requested token
  * @property {Value} change - Accumulated change amount.
@@ -238,9 +238,9 @@ export const CoinSelection = {
   /**
    * Random-Improve coin selection algorithm
    * @param {UTxOList} inputs - The set of inputs available for selection.
-   * @param {TransactionOutputs} outputs - The set of outputs requested for payment.
+   * @param {TransactionOutputs|Value} outputs - The set of outputs requested for payment, or the cumulative output value.
    * @param {int} limit - A limit on the number of inputs that can be selected.
-   * @param {UTxOList} [preset=[]]] - The pre-selection of inputs that will be added.
+   * @param {UTxOList} [preset=[]] - The pre-selection of inputs that will be added.
    * @return {SelectionResult} - Coin Selection algorithm return
    */
   randomImprove: (inputs, outputs, limit, preset = []) => {
@@ -250,8 +250,8 @@ export const CoinSelection = {
       )
     }
 
-    const _minUTxOValue =
-      BigInt(outputs.len()) * BigInt(protocolParameters.minUTxO)
+    // const _minUTxOValue =
+    //   BigInt(outputs.len()) * BigInt(protocolParameters.minUTxO)
 
     let amount = Value.new(BigNum.from_str("0"))
 
@@ -267,7 +267,16 @@ export const CoinSelection = {
       amount: amount,
     }
 
-    let mergedOutputsAmounts = mergeOutputsAmounts(outputs)
+    let mergedOutputsAmounts
+    let _minUTxOValue
+
+    if (outputs instanceof Value) {
+      mergedOutputsAmounts = outputs
+      _minUTxOValue = BigInt(protocolParameters.minUTxO)
+    } else {
+      mergedOutputsAmounts = mergeOutputsAmounts(outputs)
+      _minUTxOValue = BigInt(outputs.len()) * BigInt(protocolParameters.minUTxO)
+    }
 
     // Explode amount in an array of unique asset amount for comparison's sake
     let splitOutputsAmounts = splitAmounts(mergedOutputsAmounts)
@@ -446,6 +455,17 @@ function randomSelect(utxoSelection, outputAmount, limit, minUTxOValue) {
   return randomSelect(utxoSelection, outputAmount, limit - 1, minUTxOValue)
 }
 
+export const convertUTxoListToSelection = (utxoList) => {
+  const utxoSelection = {
+    selection: [],
+    remaining: [],
+    amount: Value.new(BigNum.from_str("0")),
+    subset: [...utxoList],
+  }
+
+  return utxoSelection
+}
+
 /**
  * Select enough UTxO in DESC order to fulfill requested outputs
  * @param {UTxOSelection} utxoSelection - The set of selected/available inputs.
@@ -457,7 +477,7 @@ function randomSelect(utxoSelection, outputAmount, limit, minUTxOValue) {
  * @throws MIN_UTXO_ERROR if lovelace change is under 'minUTxOValue' parameter.
  * @return {UTxOSelection} - Successful random utxo selection.
  */
-function descSelect(utxoSelection, outputAmount, limit, minUTxOValue) {
+export function descSelect(utxoSelection, outputAmount, limit, minUTxOValue) {
   // Sort UTxO subset in DESC order for required Output unit type
   utxoSelection.subset = utxoSelection.subset.sort((a, b) => {
     return Number(
@@ -683,7 +703,9 @@ function searchAmountValue(needle, haystack) {
   ) {
     let scriptHash = needle.multiasset().keys().get(0)
     let assetName = needle.multiasset().get(scriptHash).keys().get(0)
-    val = BigInt(haystack.multiasset().get(scriptHash).get(assetName).to_str())
+    val = BigInt(
+      haystack.multiasset().get(scriptHash)?.get(assetName)?.to_str() ?? "0",
+    )
   }
 
   return val

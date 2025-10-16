@@ -67,7 +67,7 @@ function ConnectButton({ longName = false }: { longName?: boolean }) {
           <ModalCloseButton />
           <ModalBody w="100%">
             <ConnectWalletList
-              limitNetwork={"testnet" as never}
+              limitNetwork={"mainnet" as never}
               borderRadius={15}
               gap={12}
               primaryColor={

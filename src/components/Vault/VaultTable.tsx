@@ -1,4 +1,4 @@
-// StakingTable.tsx
+// VaultTable.tsx
 import { FC, Fragment } from "react"
 import {
   Table,
@@ -11,36 +11,32 @@ import {
   Link,
   Button,
   IconButton,
-  Collapse,
-  Box,
   Flex,
   Tooltip,
   useColorModeValue,
 } from "@chakra-ui/react"
-import { InfoIcon, ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons"
-import ParticipationsTable from "./ParticipationsTable"
-import { StakingPosition } from "../../api/model/staking"
-import { Asset } from "../../api/model/common"
+import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
+import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
+import { InfoIcon } from "@chakra-ui/icons"
+import { VaultPosition } from "../../api/model/vault"
 import { CARDANOSCAN_URL } from "../../constants"
 
-interface StakingTableProps {
-  stakingPositions: StakingPosition[]
+interface VaultTableProps {
+  vaultPositions: VaultPosition[]
   expandedPositionIndex: number | null
   setExpandedPositionIndex: (index: number | null) => void
-  handleUnlockClick: (position: StakingPosition) => void
-  handleStakeClick: (position: StakingPosition) => void
+  handleUnlockClick: (position: VaultPosition) => void
+  handleMintFTClick: (position: VaultPosition) => void
   displayLockDate: (unlockDate: Date, voteEndedMessage?: boolean) => string
-  getStakedAmount: (funds: Asset[]) => string
 }
 
-const StakingTable: FC<StakingTableProps> = ({
-  stakingPositions,
+const VaultTable: FC<VaultTableProps> = ({
+  vaultPositions,
   expandedPositionIndex,
   setExpandedPositionIndex,
   handleUnlockClick,
-  handleStakeClick,
+  handleMintFTClick,
   displayLockDate,
-  getStakedAmount,
 }) => {
   // Styles
   const bgSecColor = useColorModeValue(
@@ -54,27 +50,28 @@ const StakingTable: FC<StakingTableProps> = ({
   )
   const disabledColor = useColorModeValue("grays.300.dark", "grays.600.dark")
 
-  const getUnlockDate = (position: StakingPosition) => {
-    if (position.participations.length === 0) {
-      return "-"
-    }
-    const maxEndTime = Math.max(
-      ...position.participations.map((p) => Number(p.end_time)),
-    )
-    const unlockDate = new Date(maxEndTime)
+  const getUnlockDate = (position: VaultPosition) => {
+    // TODO see if this needs to be converted to seconds
+    const unlockDate = new Date(position.release_timestamp)
     return displayLockDate(unlockDate)
+  }
+
+  const formatLockedAmount = (amount: number) => {
+    return formatNumber(
+      fromNativeAmount(amount, GOV_TOKEN_DECIMALS),
+      GOV_TOKEN_DECIMALS,
+    )
   }
 
   return (
     <Table variant="simple">
       <Thead bg={bgSecColor}>
         <Tr>
-          <Th>Participations</Th>
           <Th>
             <Flex align="center">
               Amount
               <Tooltip
-                label="This is the amount of tokens that are currently locked"
+                label="This is the amount of tokens that are locked at the vault contract."
                 aria-label="Amount Info"
               >
                 <IconButton
@@ -92,7 +89,7 @@ const StakingTable: FC<StakingTableProps> = ({
             <Flex align="center">
               Unlock Date
               <Tooltip
-                label="This shows the date at which the tokens can be unlocked."
+                label="This shows the date at which the tokens can be unlocked and rewards collected."
                 aria-label="Unlock Date Info"
               >
                 <IconButton
@@ -107,15 +104,34 @@ const StakingTable: FC<StakingTableProps> = ({
             </Flex>
           </Th>
           <Th>Transaction Hash</Th>
+          <Th>
+            <Flex align="center">
+              Vote FTs Minted
+              <Tooltip
+                label="Indicates whether the vault fungible tokens for voting have already been minted for this position."
+                aria-label="Vault FT Info"
+              >
+                <IconButton
+                  color={textSubtleColor}
+                  aria-label="Info"
+                  icon={<InfoIcon />}
+                  size="sm"
+                  mb="1px"
+                  variant="ghost"
+                />
+              </Tooltip>
+            </Flex>
+          </Th>
           <Th colSpan={2} textAlign="center">
             Actions
           </Th>
         </Tr>
       </Thead>
       <Tbody>
-        {stakingPositions.map((position, index) => {
+        {vaultPositions.map((position, index) => {
           const unlockDate = getUnlockDate(position)
-          const isUnlocked = unlockDate === "-"
+          const isUnlockable =
+            new Date() >= new Date(position.release_timestamp)
 
           return (
             <Fragment key={index}>
@@ -128,24 +144,8 @@ const StakingTable: FC<StakingTableProps> = ({
                 }
               >
                 <Td>
-                  <IconButton
-                    aria-label="Expand participations"
-                    icon={
-                      expandedPositionIndex === index ? (
-                        <ChevronUpIcon />
-                      ) : (
-                        <ChevronDownIcon />
-                      )
-                    }
-                    variant="outline"
-                    size="lg"
-                    mr={2} // adds some spacing between icon and text
-                  />
-                </Td>
-
-                <Td>
                   <Text color={textColor}>
-                    {getStakedAmount(position.funds)}
+                    {formatLockedAmount(position.locked_amount)}
                   </Text>
                 </Td>
                 <Td>
@@ -161,55 +161,45 @@ const StakingTable: FC<StakingTableProps> = ({
                     {position.transaction_hash.slice(-6)}
                   </Link>
                 </Td>
+
+                <Td>
+                  <Text color={textColor}>
+                    {position.vault_ft_already_minted ? "Yes" : "No"}
+                  </Text>
+                </Td>
                 <Td>
                   <Button
                     width="5em"
-                    isDisabled={!isUnlocked}
+                    isDisabled={!isUnlockable}
                     _hover={{
-                      bg: !isUnlocked ? disabledColor : undefined,
+                      bg: !isUnlockable ? disabledColor : undefined,
                     }}
-                    bg={!isUnlocked ? disabledColor : undefined}
+                    bg={!isUnlockable ? disabledColor : undefined}
                     _disabled={{ cursor: "not-allowed" }}
                     onClick={() => handleUnlockClick(position)}
                   >
-                    Unstake
+                    Unlock
                   </Button>
                 </Td>
                 <Td>
                   <Button
-                    width="6em"
-                    // isDisabled={!isUnlocked}
-                    // _hover={{
-                    //   bg: !isUnlocked ? disabledColor : undefined,
-                    // }}
-                    // bg={!isUnlocked ? disabledColor : undefined}
-                    // _disabled={{ cursor: "not-allowed" }}
-                    onClick={() => handleStakeClick(position)}
+                    width="8em"
+                    isDisabled={position.vault_ft_already_minted}
+                    _hover={{
+                      bg: position.vault_ft_already_minted
+                        ? disabledColor
+                        : undefined,
+                    }}
+                    bg={
+                      position.vault_ft_already_minted
+                        ? disabledColor
+                        : undefined
+                    }
+                    _disabled={{ cursor: "not-allowed" }}
+                    onClick={() => handleMintFTClick(position)}
                   >
-                    Stake More
+                    Mint Vote FTs
                   </Button>
-                </Td>
-              </Tr>
-              {/* Participations Subtable */}
-              <Tr>
-                <Td colSpan={6} p={0}>
-                  <Collapse in={expandedPositionIndex === index} animateOpacity>
-                    <Box
-                      p={4}
-                      bg={bgSecColor}
-                      borderRadius="md"
-                      boxShadow="md"
-                      borderWidth="1px"
-                    >
-                      <Text fontSize="md" fontWeight="bold" mb={2} ml={4}>
-                        Participated Votes
-                      </Text>
-                      <ParticipationsTable
-                        stakingPosition={position}
-                        displayLockDate={displayLockDate}
-                      />
-                    </Box>
-                  </Collapse>
                 </Td>
               </Tr>
             </Fragment>
@@ -220,4 +210,4 @@ const StakingTable: FC<StakingTableProps> = ({
   )
 }
 
-export default StakingTable
+export default VaultTable

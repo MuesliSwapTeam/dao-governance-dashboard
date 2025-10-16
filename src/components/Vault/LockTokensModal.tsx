@@ -21,36 +21,32 @@ import {
   Icon,
   FormErrorMessage,
   Flex,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
 } from "@chakra-ui/react"
 import { useState, FC } from "react"
 import { CheckCircleIcon } from "@chakra-ui/icons"
-import { lockTokens, lockTokensContinuation } from "../../cardano/staking/base"
+// import { lockTokens, lockTokensContinuation } from "../../cardano/staking/base"
 import { toNativeAmount } from "../../utils/numericHelpers"
-import {
-  GOV_TOKEN_DECIMALS,
-  GOV_TOKEN_SYMBOL,
-  VAULT_FT_TOKEN_SYMBOL,
-} from "../../cardano/config"
+import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
+import { openVaultPosition } from "../../cardano/vault/base"
 import { CARDANOSCAN_URL } from "../../constants"
-import { StakingPosition } from "../../api/model/staking"
 
 interface LockTokensModalProps {
   isOpen: boolean
   onClose: () => void
   balance?: number
-  ftBalance?: number
-  position?: StakingPosition
 }
 
 const LockTokensModal: FC<LockTokensModalProps> = ({
   isOpen,
   onClose,
-  balance,
-  ftBalance,
-  position,
+  balance = 0,
 }) => {
-  const [milkAmount, setMilkAmount] = useState(0)
-  const [ftAmount, setFtAmount] = useState(ftBalance)
+  const [amount, setAmount] = useState(0)
+  const [lockingPeriod, setLockingPeriod] = useState(26) // Default to 26 weeks
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
@@ -60,21 +56,11 @@ const LockTokensModal: FC<LockTokensModalProps> = ({
     setError(null)
     setTxHash(null)
     try {
-      // Updated transaction logic now supports specific FT amounts
-      if (!position) {
-        const hash = await lockTokens(
-          Number(toNativeAmount(milkAmount, GOV_TOKEN_DECIMALS)),
-          (ftAmount ?? 0) > 0 ? ftAmount : undefined,
-        )
-        setTxHash(hash)
-      } else {
-        const hash = await lockTokensContinuation(
-          position,
-          Number(toNativeAmount(milkAmount, GOV_TOKEN_DECIMALS)),
-          (ftAmount ?? 0) > 0 ? ftAmount : undefined,
-        )
-        setTxHash(hash)
-      }
+      const hash = await openVaultPosition(
+        Number(toNativeAmount(amount, GOV_TOKEN_DECIMALS)),
+        lockingPeriod,
+      )
+      setTxHash(hash)
     } catch (error) {
       console.error("Transaction failed", error)
       setError("Transaction failed. Please try again.")
@@ -83,12 +69,8 @@ const LockTokensModal: FC<LockTokensModalProps> = ({
     }
   }
 
-  const isMilkError =
-    milkAmount > (balance || 0) || (milkAmount > 0 && (balance || 0) <= 0)
-  const isFtError =
-    (ftAmount ?? 0) > (ftBalance || 0) || ((ftAmount ?? 0) > 0 && (ftBalance || 0) <= 0)
-  const isFormError = isMilkError || isFtError
-  const isLockButtonDisabled = (milkAmount <= 0 && (ftAmount ?? 0) <= 0) || isFormError
+  const isFormError = amount > balance || balance <= 0
+  const isLockButtonDisabled = amount <= 0 || isFormError
 
   const bgColor = useColorModeValue("background.light", "background.dark")
   const bgSecColor = useColorModeValue(
@@ -163,74 +145,61 @@ const LockTokensModal: FC<LockTokensModalProps> = ({
             <>
               <Box mb={4}>
                 <Text fontSize="md" mb={4}>
-                  Enter the amounts of tokens you want to lock to gain voting
+                  Enter the amount of tokens you want to lock to gain voting
                   power
                 </Text>
-
-                {/* MILK Token Input */}
-                <FormControl isInvalid={isMilkError} mb={4}>
+                <FormControl isInvalid={isFormError} isRequired mb={6}>
                   <Box
                     display="flex"
                     justifyContent="space-between"
                     alignItems="center"
                   >
                     <FormLabel fontSize="sm" mb={0}>
-                      {GOV_TOKEN_SYMBOL} Amount to Lock
+                      Amount to Lock
                     </FormLabel>
                     <Text fontSize="sm" color={textSubtleColor}>
-                      Balance: {balance || 0}
+                      Balance: {balance}
                     </Text>
                   </Box>
                   <NumberInput
                     bg={bgSecColor}
                     min={0}
-                    value={milkAmount}
+                    value={amount}
                     onChange={(valueString) =>
-                      setMilkAmount(parseInt(valueString) || 0)
+                      setAmount(parseInt(valueString) || 0)
                     }
                     size="lg"
                   >
                     <NumberInputField />
                   </NumberInput>
                   <FormErrorMessage>
-                    {milkAmount > (balance || 0)
-                      ? `You don't own that many ${GOV_TOKEN_SYMBOL} tokens`
-                      : `You don't own any ${GOV_TOKEN_SYMBOL} tokens`}
+                    {amount > balance
+                      ? "You don't own that many tokens"
+                      : "You don't own any tokens"}
                   </FormErrorMessage>
                 </FormControl>
 
-                {/* FT Token Input */}
-                <FormControl isInvalid={isFtError}>
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
+                {/* Locking Period Slider */}
+                <FormControl>
+                  <FormLabel fontSize="sm" mb={2}>
+                    Locking Period (Weeks): {lockingPeriod}
+                  </FormLabel>
+                  <Slider
+                    aria-label="locking-period-slider"
+                    min={26}
+                    max={70}
+                    step={1}
+                    value={lockingPeriod}
+                    onChange={setLockingPeriod}
                   >
-                    <FormLabel fontSize="sm" mb={0}>
-                      {VAULT_FT_TOKEN_SYMBOL} Amount to Lock
-                    </FormLabel>
-                    <Text fontSize="sm" color={textSubtleColor}>
-                      Balance: {ftBalance || 0}
-                    </Text>
-                  </Box>
-                  <NumberInput
-                    bg={bgSecColor}
-                    min={0}
-                    value={ftAmount}
-                    onChange={(valueString) =>
-                      setFtAmount(parseInt(valueString) || 0)
-                    }
-                    size="lg"
-                  >
-                    <NumberInputField />
-                  </NumberInput>
-                  <FormErrorMessage>
-                    {(ftAmount ?? 0) > (ftBalance || 0)
-                      ? `You don't own that many ${VAULT_FT_TOKEN_SYMBOL} tokens`
-                      : `You don't own any ${VAULT_FT_TOKEN_SYMBOL} tokens`}
-                  </FormErrorMessage>
+                    <SliderTrack>
+                      <SliderFilledTrack />
+                    </SliderTrack>
+                    <SliderThumb />
+                  </Slider>
                 </FormControl>
               </Box>
+
               <Flex justify="space-evenly" mt={6} gap={2}>
                 <Button
                   onClick={handleLockTokens}

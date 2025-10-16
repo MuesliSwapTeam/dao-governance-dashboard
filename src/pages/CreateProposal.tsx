@@ -10,7 +10,6 @@ const CreateProposalPage = () => {
     "accentPressed.light",
     "accentPressed.dark",
   )
-
   return (
     <Flex
       flexDir="column"

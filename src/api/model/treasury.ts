@@ -25,4 +25,9 @@ export interface TreasuryHistoryItem {
   action: "payout" | "deposit" | "consolidate"
 }
 
+export interface TreasuryPayoutDatumConstructionRequest {
+  address: string
+  value: { [unit: string]: number }[]
+}
+
 export type TreasuryChartItem = { timestamp: string; funds: TreasuryAsset[] }

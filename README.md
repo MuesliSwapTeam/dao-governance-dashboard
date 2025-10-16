@@ -34,6 +34,16 @@ This milestone focuses on implementing the constructions of the transaction nece
 - **🏦 Treasury Overview** – View DAO treasury history and value development
 
 
+### ✅ **Milestone 4: Feature Expansion & Beta Mainnet Release**
+
+This milestone focuses on expanding the governance dashboard with advanced features and deploying the first **beta version** on the **Cardano Mainnet**. The goal is to enhance real-world usability, improve the user experience, and ensure secure, stable on-chain governance interactions.
+
+**Key Additions and Improvements:**
+
+* **🚀 Beta Mainnet Deployment** – Launch of the DAO Governance Dashboard on Cardano Mainnet for real DAO testing and adoption.
+* **🔐 Governance Token Integration** – Full support for native governance token interactions (e.g., vaults).
+* **⚙️ Performance & Security Enhancements** – Optimized on-chain transaction handling and backend data fetching to ensure faster and more secure user experiences.
+
 ## **Tech Stack**  
 
 The project is built using modern web technologies and Cardano-specific tooling:  

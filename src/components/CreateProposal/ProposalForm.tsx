@@ -40,6 +40,7 @@ import { useGetTreasuryFundsQuery } from "../../api/treasuryApi"
 import { useNavigate } from "react-router-dom"
 import { CheckCircleIcon } from "@chakra-ui/icons"
 import ConnectButton from "../ConnectButton"
+import { CARDANOSCAN_URL } from "../../constants"
 
 // Custom validation method
 declare module "yup" {
@@ -122,9 +123,15 @@ const useValidationSchema = () => {
                       Yup.object().shape({
                         address: Yup.string().required("Required"),
                         assets: Yup.array()
+                          .min(
+                            1,
+                            "At least one asset must be selected for FundPayout",
+                          )
                           .of(
                             Yup.object({
                               quantity: Yup.number()
+                                // TODO should shift this validation to the component. UX is annoying
+                                // and need to validate that minAda on output treasury UTxO would be satisfied
                                 .min(1, "Amount has to be higher than 0")
                                 .test("max-value", function (value) {
                                   const { unit } = this.parent
@@ -190,7 +197,7 @@ const ProposalForm = () => {
   const handleSubmit = async (values: any) => {
     if (!isFetching) {
       const result = await fetch()
-
+      console.log("result", result)
       if (result.data && result.data.length) {
         const cleanValues = getCleanProposalValues(
           values.title,
@@ -202,11 +209,12 @@ const ProposalForm = () => {
         )
 
         const govData = result.data[0]
+        console.log("creating tally")
         const hash = await createTally(
           govData.transaction_hash,
           govData.output_index,
           [
-            { unit: "lovelace", quantity: 3029970 },
+            { unit: "lovelace", quantity: 3004110 },
             {
               unit: govData.gov_nft.policy_id + govData.gov_nft.asset_name,
               quantity: 1,
@@ -220,11 +228,12 @@ const ProposalForm = () => {
           (
             Number(Date.now()) +
             2 * govData.min_proposal_duration +
-            1e5
+            12e4
           ).toString(),
           JSON.stringify(cleanValues, null, 2),
           values.votes,
         )
+        console.log("hash", hash)
         // Open the success dialog, if a tx hash is present
         if (hash) {
           setTxHash(hash)
@@ -395,11 +404,11 @@ const ProposalForm = () => {
                   isDisabled={
                     isFetching || values.votes.length <= 0 || !isConnected
                   }
-                  // onClick={() => {
-                  //   if (Object.keys(errors).length > 0) {
-                  //     console.log('Errors preventing submission:', errors);
-                  //   }
-                  // }}
+                // onClick={() => {
+                //   if (Object.keys(errors).length > 0) {
+                //     console.log('Errors preventing submission:', errors);
+                //   }
+                // }}
                 >
                   {isFetching ? "Loading..." : "Submit"}
                 </Button>
@@ -437,8 +446,7 @@ const ProposalForm = () => {
               colorScheme="blue"
               mr={3}
               onClick={() => {
-                /* TODO : Make this configurable */
-                const url = `https://preprod.cardanoscan.io/transaction/${txHash}`
+                const url = `${CARDANOSCAN_URL}/transaction/${txHash}`
                 window.open(url, "_blank")
               }}
             >

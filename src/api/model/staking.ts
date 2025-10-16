@@ -38,6 +38,7 @@ export interface StakingPosition {
   owner: string
   transaction_hash: string
   output_index: number
+  datum: string
   funds: Asset[]
   participations: Participation[]
   vault_ft_policy: string

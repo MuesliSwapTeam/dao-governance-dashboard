@@ -8,6 +8,7 @@ import {
   TreasuryChartItem,
   TreasuryHistoryItem,
   TreasuryAsset,
+  TreasuryPayoutDatumConstructionRequest,
 } from "./model/treasury"
 import { API_URL } from "../constants"
 
@@ -23,6 +24,16 @@ const buildEndpoints = (
   getTreasuryChart: builder.query<TreasuryChartItem[], void>({
     query: () => `/api/v1/treasury/daily_chart`,
   }),
+  getTreasuryPayoutDatum: builder.query<
+    string,
+    TreasuryPayoutDatumConstructionRequest
+  >({
+    query: (request) => ({
+      url: `/api/v1/treasury/build_payout_datum`,
+      method: "POST",
+      body: request,
+    }),
+  }),
 })
 
 export const treasuryApi = createApi({
@@ -35,4 +46,5 @@ export const {
   useGetTreasuryFundsQuery,
   useGetTreasuryHistoryQuery,
   useGetTreasuryChartQuery,
+  useGetTreasuryPayoutDatumQuery,
 } = treasuryApi

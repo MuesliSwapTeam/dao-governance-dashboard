@@ -64,13 +64,18 @@ const NavBar: React.FC = () => {
         Treasury
       </Button>
       <Button variant="ghost" onClick={() => navigate("/stake")}>
-        My Stake
+        Staking
       </Button>
+      <Button variant="ghost" onClick={() => navigate("/vault")}>
+        Vault
+      </Button>
+
       {/*
       Remove matchmaker link for testnet
+      */}
       <Button variant="ghost" onClick={() => navigate("/matchmakers")}>
         Matchmakers
-    </Button>*/}
+      </Button>
 
       {/* Wallet Connect Button */}
       <ConnectButton />

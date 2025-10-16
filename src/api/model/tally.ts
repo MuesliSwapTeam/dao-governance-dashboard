@@ -1,9 +1,15 @@
 import { Token } from "./common"
 
+type LicenseResponse = {
+  recipient: string
+  license_validity: number
+}
+
 export type VoteResponse = {
   weight: number
   proposal: any // ? RawPlutusData.from_cbor().to_dict()
-  proposal_type: string
+  proposal_type?: string // Optional since matchmaker tallies might not have this field
+  details?: LicenseResponse | any // Optional details field for additional vote information
 
   title: string
   description: string
@@ -36,7 +42,7 @@ export type TallyResponse = {
 
 // Result Types
 
-export type Asset = { quantity: number; unit: string }
+export type Asset = { quantity: number; unit: string; decimalPlaces: number }
 export type FundPayoutArgs = { address: string; assets: Asset[] }
 export type OpinionArgs = string
 
@@ -60,6 +66,7 @@ export type VoteResult = {
   weight: number
   title: string
   description: string
+  details?: any // Optional details field for additional vote information
 } & (
   | { type: "FundPayout"; args: VoteArgsMap["FundPayout"] }
   | { type: "Opinion"; args: VoteArgsMap["Opinion"] }
@@ -84,7 +91,7 @@ export type Proposal = {
   description: string
   links: string[]
   endDate: string
-  endDatePosix: number
+  endDatePosix: number | null
 
   votes: VoteResult[]
   voteTypes: VoteType[]
