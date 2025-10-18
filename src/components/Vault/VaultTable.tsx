@@ -19,7 +19,6 @@ import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
 import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
 import { InfoIcon } from "@chakra-ui/icons"
 import { VaultPosition } from "../../api/model/vault"
-import { CARDANOSCAN_URL } from "../../constants"
 
 interface VaultTableProps {
   vaultPositions: VaultPosition[]
@@ -154,7 +153,7 @@ const VaultTable: FC<VaultTableProps> = ({
                 <Td>
                   <Link
                     color="teal.500"
-                    href={`${CARDANOSCAN_URL}/transaction/${position.transaction_hash}`}
+                    href={`https://preprod.cardanoscan.io/transaction/${position.transaction_hash}`}
                     isExternal
                   >
                     {position.transaction_hash.slice(0, 6)}...

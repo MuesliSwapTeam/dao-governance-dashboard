@@ -32,7 +32,6 @@ import { CheckCircleIcon } from "@chakra-ui/icons"
 import { toNativeAmount } from "../../utils/numericHelpers"
 import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
 import { openVaultPosition } from "../../cardano/vault/base"
-import { CARDANOSCAN_URL } from "../../constants"
 
 interface LockTokensModalProps {
   isOpen: boolean
@@ -132,7 +131,7 @@ const LockTokensModal: FC<LockTokensModalProps> = ({
               </Flex>
               <Button
                 as="a"
-                href={`${CARDANOSCAN_URL}/transaction/${txHash}`}
+                href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
                 target="_blank"
                 variant="link"
                 m="1em"

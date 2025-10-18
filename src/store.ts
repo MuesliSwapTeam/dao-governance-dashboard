@@ -6,6 +6,7 @@ import { tallyApi } from "./api/tallyApi"
 import { treasuryApi } from "./api/treasuryApi"
 import { governanceApi } from "./api/governanceStateApi"
 import { vaultApi } from "./api/vaultApi"
+import { monitoringApi } from "./api/monitoringApi"
 import constantsReducer from "./context/global/constantsSlice"
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     [treasuryApi.reducerPath]: treasuryApi.reducer,
     [governanceApi.reducerPath]: governanceApi.reducer,
     [vaultApi.reducerPath]: vaultApi.reducer,
+    [monitoringApi.reducerPath]: monitoringApi.reducer,
     constants: constantsReducer,
     // Add other reducers here if needed
   },
@@ -29,6 +31,7 @@ export const store = configureStore({
       treasuryApi.middleware,
       governanceApi.middleware,
       vaultApi.middleware,
+      monitoringApi.middleware,
     ]),
 })
 

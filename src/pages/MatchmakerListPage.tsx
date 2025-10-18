@@ -23,13 +23,17 @@ import { useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { MdSwapHoriz } from "react-icons/md"
 import { CheckCircleIcon, CopyIcon, TimeIcon } from "@chakra-ui/icons"
+import { MdMonitor } from "react-icons/md"
 
 import cardanoScanLogo from "../assets/cardanoscan-favicon-32x32.png"
 import cexplorerLogo from "../assets/cexplorer-favicon.svg"
 import taptoolsLogo from "../assets/taptools-favicon.png"
 import { GOV_TOKEN_SYMBOL } from "../cardano/config"
 import { useGetMatchmakerTalliesQuery } from "../api/tallyApi"
+import { useGetEnhancedMonitoredBatchersQuery } from "../api/monitoringApi"
+import { BatcherAllStats, EnhancedMonitoringEntry } from "../api/model/monitoring"
 import VoteRatioBar from "../components/VoteRatioBar"
+import MonitoringList from "../components/MonitoringList"
 import { matchmakeryEntry } from "../api/model/matchmakers"
 import { Proposal } from "../api/model/tally"
 import useWalletContext from "../context/wallet"
@@ -37,7 +41,6 @@ import AddSupportModal from "../components/AddSupportModal"
 import WithdrawSupportModal from "../components/WithdrawSupportModal"
 import UserVoteIndicator from "../components/UserVoteIndicator"
 import { useUserVotingInfo } from "../hooks/useUserVotingInfo"
-import { CARDANOSCAN_URL } from "../constants"
 
 import { parseLicenseReleaseArgs } from "../utils/proposals"
 
@@ -280,7 +283,7 @@ const MatchmakerList: React.FC<{ matchmakers: matchmakeryEntry[] }> = ({
                       {batcherAddress !== "TO BE ADDED" && (
                         <>
                           <ChakraLink
-                            href={`${CARDANOSCAN_URL}/address/${batcherAddress}`}
+                            href={`https://preprod.cardanoscan.io/address/${batcherAddress}`}
                             isExternal
                             aria-label="Show on Cardanoscan"
                           >
@@ -526,6 +529,49 @@ const MatchmakerListPage: React.FC = () => {
     error,
   } = useGetMatchmakerTalliesQuery({ open: true, closed: true })
 
+  // Fetch enhanced monitoring data with all-stats integration
+  const {
+    data: allStatsData,
+    isLoading: isMonitoringLoading,
+    error: monitoringError,
+  } = useGetEnhancedMonitoredBatchersQuery()
+
+  // Transform BatcherAllStats to EnhancedMonitoringEntry
+  const monitoringData = useMemo(() => {
+    if (!allStatsData) return []
+    
+    const enhancedEntries: EnhancedMonitoringEntry[] = allStatsData.map((stats: BatcherAllStats) => {
+      // Determine performance status based on processing time
+      let performance_status: "excellent" | "good" | "average" | "poor" = "average"
+      if (stats.avg_processing_time < 1000) performance_status = "excellent"
+      else if (stats.avg_processing_time < 5000) performance_status = "good"
+      else if (stats.avg_processing_time < 15000) performance_status = "average"
+      else performance_status = "poor"
+      
+      // Determine profit status
+      let profit_status: "profitable" | "mixed" | "losing" = "mixed"
+      if (stats.avg_profit > 0 && stats.min_profit >= 0) profit_status = "profitable"
+      else if (stats.avg_profit < 0) profit_status = "losing"
+      else profit_status = "mixed"
+      
+      return {
+        batcher_address: stats.addresses[0], // Use first address as main
+        num_transactions: stats.num_transactions,
+        status: "active" as const,
+        max_profit: stats.max_profit,
+        min_profit: stats.min_profit,
+        avg_profit: stats.avg_profit,
+        avg_processing_time: stats.avg_processing_time,
+        total_profit: stats.total_profit,
+        performance_status,
+        profit_status
+      }
+    })
+    
+    // Sort by total profit descending
+    return enhancedEntries.sort((a: EnhancedMonitoringEntry, b: EnhancedMonitoringEntry) => (b.total_profit || 0) - (a.total_profit || 0))
+  }, [allStatsData])
+
   // Transform tallies to matchmaker entries
   const matchmakers = useMemo(() => {
     if (!tallies) return []
@@ -539,7 +585,7 @@ const MatchmakerListPage: React.FC = () => {
     return [passedLicenses, pendingLicenses]
   }, [matchmakers])
 
-  const tabMapping = ["passed", "pending"]
+  const tabMapping = ["passed", "pending", "monitoring"]
 
   const [searchParams, setSearchParams] = useSearchParams()
   const tabIndex = tabMapping.indexOf(searchParams.get("tab") ?? "passed") // Default to passed licenses
@@ -577,6 +623,9 @@ const MatchmakerListPage: React.FC = () => {
               <Tab _selected={{ color: "white", bg: "blue.500" }}>
                 <TimeIcon mr="2" /> Pending Licenses
               </Tab>
+              <Tab _selected={{ color: "white", bg: "purple.500" }}>
+                <MdMonitor style={{ marginRight: "8px" }} /> Monitoring
+              </Tab>
             </TabList>
           </Flex>
           <TabPanels>
@@ -585,6 +634,20 @@ const MatchmakerListPage: React.FC = () => {
             </TabPanel>
             <TabPanel>
               <MatchmakerList matchmakers={pendingLicenses} />
+            </TabPanel>
+            <TabPanel>
+              {isMonitoringLoading ? (
+                <Flex justify="center" align="center" height="200px">
+                  <Spinner size="xl" />
+                </Flex>
+              ) : monitoringError ? (
+                <Alert status="error">
+                  <AlertIcon />
+                  There was an error while requesting monitoring data.
+                </Alert>
+              ) : (
+                <MonitoringList monitoredBatchers={monitoringData || []} />
+              )}
             </TabPanel>
           </TabPanels>
         </Tabs>

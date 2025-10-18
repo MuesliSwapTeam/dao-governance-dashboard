@@ -41,10 +41,10 @@ export function toHex(bytes: Uint8Array) {
 
 async function blockfrostRequest(endpoint: string) {
   return await fetch(
-    "https://cardano-mainnet.blockfrost.io/api/v0" + endpoint,
+    "https://cardano-preprod.blockfrost.io/api/v0" + endpoint,
     {
       headers: {
-        project_id: "mainnetjgdbXRrz6gH0hTST2Bx2C5bRqNKFq9ub",
+        project_id: "preprodjgdbXRrz6gH0hTST2Bx2C5bRqNKFq9ub",
         "User-Agent": "muesliswap",
       },
       method: "GET",
@@ -347,7 +347,7 @@ function unixTimeToEnclosingSlot(
 }
 
 export function unixTimeToSlot(unixTime: number): number {
-  return unixTimeToEnclosingSlot(unixTime, SLOT_CONFIG_NETWORK["Mainnet"])
+  return unixTimeToEnclosingSlot(unixTime, SLOT_CONFIG_NETWORK["Preprod"])
 }
 
 export const convertToValue = (funds: Asset[]) => {
@@ -367,7 +367,7 @@ export const convertToValue = (funds: Asset[]) => {
 }
 // Function to convert Value to PlutusData
 export function valueToPlutusData(value: Value): PlutusData {
-  // TODO: Fix all these type casts below (as unknown as PlutusMapValues)
+  // TODO raunc: Fix all these type casts below (as unknown as PlutusMapValues)
   // They are only there so I could get the build working
   const multiassetMap = PlutusMap.new()
 

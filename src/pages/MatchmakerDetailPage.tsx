@@ -36,13 +36,12 @@ import AddSupportModal from "../components/AddSupportModal"
 import WithdrawSupportModal from "../components/WithdrawSupportModal"
 import UserVoteIndicator from "../components/UserVoteIndicator"
 import { useUserVotingInfo } from "../hooks/useUserVotingInfo"
-import { CARDANOSCAN_URL } from "../constants"
 
 const getInspectorUrl = (address: string, production = false) => {
   const baseUrl =
     production === true
       ? `https://cardanoscan.io/address/`
-      : `${CARDANOSCAN_URL}/address/`
+      : `https://preprod.cardanoscan.io/address/`
 
   return `${baseUrl}${address}`
 }

@@ -21,7 +21,6 @@ import { InfoIcon, ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons"
 import ParticipationsTable from "./ParticipationsTable"
 import { StakingPosition } from "../../api/model/staking"
 import { Asset } from "../../api/model/common"
-import { CARDANOSCAN_URL } from "../../constants"
 
 interface StakingTableProps {
   stakingPositions: StakingPosition[]
@@ -154,7 +153,7 @@ const StakingTable: FC<StakingTableProps> = ({
                 <Td>
                   <Link
                     color="teal.500"
-                    href={`${CARDANOSCAN_URL}/transaction/${position.transaction_hash}`}
+                    href={`https://preprod.cardanoscan.io/transaction/${position.transaction_hash}`}
                     isExternal
                   >
                     {position.transaction_hash.slice(0, 6)}...

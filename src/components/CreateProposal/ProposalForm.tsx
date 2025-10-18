@@ -40,7 +40,6 @@ import { useGetTreasuryFundsQuery } from "../../api/treasuryApi"
 import { useNavigate } from "react-router-dom"
 import { CheckCircleIcon } from "@chakra-ui/icons"
 import ConnectButton from "../ConnectButton"
-import { CARDANOSCAN_URL } from "../../constants"
 
 // Custom validation method
 declare module "yup" {
@@ -404,11 +403,11 @@ const ProposalForm = () => {
                   isDisabled={
                     isFetching || values.votes.length <= 0 || !isConnected
                   }
-                // onClick={() => {
-                //   if (Object.keys(errors).length > 0) {
-                //     console.log('Errors preventing submission:', errors);
-                //   }
-                // }}
+                  // onClick={() => {
+                  //   if (Object.keys(errors).length > 0) {
+                  //     console.log('Errors preventing submission:', errors);
+                  //   }
+                  // }}
                 >
                   {isFetching ? "Loading..." : "Submit"}
                 </Button>
@@ -446,7 +445,8 @@ const ProposalForm = () => {
               colorScheme="blue"
               mr={3}
               onClick={() => {
-                const url = `${CARDANOSCAN_URL}/transaction/${txHash}`
+                /* TODO pjordan: Make this configurable */
+                const url = `https://preprod.cardanoscan.io/transaction/${txHash}`
                 window.open(url, "_blank")
               }}
             >

@@ -33,16 +33,26 @@ This milestone focuses on implementing the constructions of the transaction nece
 - **👀 Proposal Viewing** – View detailed information on proposals including voting results
 - **🏦 Treasury Overview** – View DAO treasury history and value development
 
+## **🎯 Catalyst Project: Decentralised Batcher Framework**
 
-### ✅ **Milestone 4: Feature Expansion & Beta Mainnet Release**
+The **matchmaker licensing and monitoring functionality** in this dashboard is part of a separate Catalyst-funded project:
 
-This milestone focuses on expanding the governance dashboard with advanced features and deploying the first **beta version** on the **Cardano Mainnet**. The goal is to enhance real-world usability, improve the user experience, and ensure secure, stable on-chain governance interactions.
+### **Project Details**
+- **🏷️ Project Name**: [Decentralised Batcher Framework with DAO governance](https://projectcatalyst.io/funds/12/cardano-open-developers/decentralised-batcher-framework-with-dao-governance)
+- **🔢 Project ID**: #1200092
+- **💰 Total Funding**: ₳145,000
+- **📊 Status**: In Progress (Milestone 1/4 Complete)
 
-**Key Additions and Improvements:**
+### **Matchmaker Features**
+This Catalyst project enables:
+- **🎫 Matchmaker License Management** – DAO-governed licensing system for Cardano batchers
+- **📊 Batcher Monitoring** – Real-time performance tracking and compliance monitoring
+- **🗳️ License Voting** – Community-driven voting for batcher license approval/revocation
+- **📈 Analytics Dashboard** – Comprehensive statistics on batcher performance and profitability
 
-* **🚀 Beta Mainnet Deployment** – Launch of the DAO Governance Dashboard on Cardano Mainnet for real DAO testing and adoption.
-* **🔐 Governance Token Integration** – Full support for native governance token interactions (e.g., vaults).
-* **⚙️ Performance & Security Enhancements** – Optimized on-chain transaction handling and backend data fetching to ensure faster and more secure user experiences.
+The framework allows DAOs to issue and govern licenses for Cardano batchers, enhancing transparency and community control through smart contracts and automated monitoring systems.
+
+**Learn more**: [Project Catalyst - Decentralised Batcher Framework](https://projectcatalyst.io/funds/12/cardano-open-developers/decentralised-batcher-framework-with-dao-governance)
 
 ## **Tech Stack**  
 

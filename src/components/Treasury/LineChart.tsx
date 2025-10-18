@@ -56,6 +56,7 @@ const LineChart: React.FC<{
       }
     }
 
+    // TODO pjordan: Normalize these in some way
     const labels = assetHistory.map((v) => v.timestamp)
     const data = assetHistory.map((v) =>
       fromNativeAmount(

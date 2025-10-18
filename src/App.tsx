@@ -22,6 +22,7 @@ import CreateProposalPage from "./pages/CreateProposal"
 import ProposalDetailPage from "./pages/ProposalDetailPage"
 import MatchmakerListPage from "./pages/MatchmakerListPage"
 import MatchmakerDetailPage from "./pages/MatchmakerDetailPage"
+import BatcherDetailPage from "./pages/BatcherDetailPage"
 import MobileNotSupportedPage from "./components/MobileNotSupportedPage"
 
 declare global {
@@ -69,6 +70,10 @@ function App() {
             <Route
               path="/matchmakers/:authNft/:id"
               element={<MatchmakerDetailPage />}
+            />
+            <Route 
+              path="/batchers/:address" 
+              element={<BatcherDetailPage />} 
             />
             <Route path="/stake" element={<StakePage />} />
             <Route path="/vault" element={<VaultPage />} />

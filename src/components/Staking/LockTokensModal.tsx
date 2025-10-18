@@ -31,7 +31,6 @@ import {
   GOV_TOKEN_SYMBOL,
   VAULT_FT_TOKEN_SYMBOL,
 } from "../../cardano/config"
-import { CARDANOSCAN_URL } from "../../constants"
 import { StakingPosition } from "../../api/model/staking"
 
 interface LockTokensModalProps {
@@ -150,7 +149,7 @@ const LockTokensModal: FC<LockTokensModalProps> = ({
               </Flex>
               <Button
                 as="a"
-                href={`${CARDANOSCAN_URL}/transaction/${txHash}`}
+                href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
                 target="_blank"
                 variant="link"
                 m="1em"

@@ -11,4 +11,14 @@ export default defineConfig({
     topLevelAwait(),
     react()
   ],
+  server: {
+    proxy: {
+      '/api/monitoring': {
+        target: 'https://dao-batcher-monitoring.muesliswap.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/monitoring/, ''),
+        secure: true,
+      }
+    }
+  }
 })

@@ -30,7 +30,7 @@ export const parseLicenseReleaseArgs = (proposal: Proposal) => {
   try {
     const licenseArgs = licenseVote.args as any
     if (licenseArgs && licenseArgs.fields && licenseArgs.fields.length >= 3) {
-      // TODO: Properly transform binary to cbor
+      // TODO pjordan: Properly transform binary to cbor
       address =
         licenseArgs.fields[0]?.fields?.[0]?.fields?.[0]?.bytes || "TO BE ADDED"
       datum = licenseArgs.fields[1]

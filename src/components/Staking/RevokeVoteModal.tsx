@@ -24,7 +24,6 @@ import { formatNumber, fromNativeAmount } from "../../utils/numericHelpers"
 import { Participation, StakingPosition } from "../../api/model/staking"
 import { Asset } from "../../api/model/common"
 import { GOV_TOKEN_DECIMALS } from "../../cardano/config"
-import { CARDANOSCAN_URL } from "../../constants"
 
 interface RevokeVoteModalProps {
   isOpen: boolean
@@ -131,7 +130,7 @@ const RevokeVoteModal: FC<RevokeVoteModalProps> = ({
               </Flex>
               <Button
                 as="a"
-                href={`${CARDANOSCAN_URL}/transaction/${txHash}`}
+                href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
                 target="_blank"
                 variant="link"
                 m="1em"

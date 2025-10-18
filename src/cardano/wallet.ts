@@ -16,7 +16,7 @@ import { toast } from "../components/ToastContainer.ts"
 export function wrongNetworkToast() {
   toast({
     title: "Wrong Network",
-    description: "Please switch to the Cardano Mainnet network",
+    description: "Please switch to the Cardano Preprod network",
     status: "error" as "error",
     duration: 5000,
     isClosable: false,
@@ -31,8 +31,7 @@ export async function setWallet(connectorName: string | undefined) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WALLET_CONNECTOR = await (window as any).cardano[connectorName].enable()
     const networkId = await WALLET_CONNECTOR.getNetworkId()
-    console.log("Network ID", networkId)
-    if (networkId != 1) {
+    if (networkId === 1) {
       wrongNetworkToast()
       return
     }
@@ -49,9 +48,7 @@ export async function restoreWallet() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     WALLET_CONNECTOR = await (window as any).cardano[connectorName].enable()
     const networkId = await WALLET_CONNECTOR.getNetworkId()
-    console.log("Network ID", networkId)
-
-    if (networkId != 1) {
+    if (networkId === 1) {
       wrongNetworkToast()
       return false
     }

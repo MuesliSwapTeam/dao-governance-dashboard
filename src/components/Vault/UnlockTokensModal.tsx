@@ -26,7 +26,6 @@ import {
 } from "../../cardano/config"
 import { VaultPosition } from "../../api/model/vault.ts"
 import { closeVaultPosition } from "../../cardano/vault/base.ts"
-import { CARDANOSCAN_URL } from "../../constants"
 
 interface UnlockTokensModalProps {
   isOpen: boolean
@@ -108,7 +107,7 @@ const UnlockTokensModal: FC<UnlockTokensModalProps> = ({
               </Flex>
               <Button
                 as="a"
-                href={`${CARDANOSCAN_URL}/transaction/${txHash}`}
+                href={`https://preprod.cardanoscan.io/transaction/${txHash}`}
                 target="_blank"
                 variant="link"
                 m="1em"
